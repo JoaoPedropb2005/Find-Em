@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.navigation.compose)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

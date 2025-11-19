@@ -22,25 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.findem.ui.theme.FindEmTheme
 
-class Explication1 : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            FindEmTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Explication1Page(
-                        modifier = Modifier.padding(innerPadding),
-                        onContinueClick = {
-                            startActivity(Intent(this, TelaMain::class.java))
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
 @Composable
 fun Explication1Page(
     modifier: Modifier = Modifier,

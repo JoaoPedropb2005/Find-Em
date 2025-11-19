@@ -1,11 +1,9 @@
 package com.example.findem
 
-import android.R
 import android.R.attr.navigationIcon
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -27,55 +25,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.example.findem.model.FindEmViewModel
-import com.example.findem.ui.theme.FindEmScreen
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            FindEmTheme {
-                val viewModel: FindEmViewModel by viewModels()
-                val navController = rememberNavController()
-
-                NavHost(navController = navController, startDestination = "explicacao") {
-
-                    composable("explicacao") {
-                        Explication1Page(
-                            onContinueClick = { navController.navigate("home") }
-                        )
-                    }
-
-                    composable("home") {
-                        FindEmScreen(viewModel = viewModel)
-                    }
-
-                    // Futuramente: composable("formulario") { ... }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FindEmTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = lightColorScheme(
-            primary = Color(0xFF4CAF50),
-            onPrimary = Color.White,
-            background = Color(0xFFF5F5F5),
-            onBackground = Color.Black
-        ),
-        content = content
-    )
-}
-
+//data class Pet(
+//    val id: Int,
+//    val nome: String,
+//    val raca: String,
+//    val endereco: String,
+//    val classificacao: String,
+//    val imagemRes: Int,
+//    val especie: String,
+//    val categoria: String,
+//    val ultimolocal: String
+//)
+//
+//
+//class TelaMain : ComponentActivity() {
+//    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//        setContent {
+//            FindEmTheme {
+//                FindEmScreen()
+//            }
+//        }
+//    }
+//}
+//
 //@Composable
 //fun FindEmTheme(content: @Composable () -> Unit) {
 //    MaterialTheme(
@@ -107,19 +83,19 @@ fun FindEmTheme(content: @Composable () -> Unit) {
 //    val petsList = remember {
 //        mutableStateListOf(
 //            Pet(1, "Ludovico", "Pelo curto BR", "Rua ***", "****",
-//                R.drawable.ic_menu_gallery, "cachorro", "perdidos", "Minha rua"),
+//                android.R.drawable.ic_menu_gallery, "cachorro", "perdidos", "Minha rua"),
 //            Pet(2, "Sarapatel", "Europeu", "Rua ***", "****",
-//                R.drawable.ic_menu_gallery, "cachorro", "adocao", "Minha rua"),
+//                android.R.drawable.ic_menu_gallery, "cachorro", "adocao", "Minha rua"),
 //            Pet(3, "Snowbell", "Persa", "Rua ***", "****",
-//                R.drawable.ic_menu_gallery, "gato", "perdidos", "Minha rua"),
+//                android.R.drawable.ic_menu_gallery, "gato", "perdidos", "Minha rua"),
 //            Pet(4, "Luciano", "Doméstico", "Rua ***", "****",
-//                R.drawable.ic_menu_gallery, "ave", "adocao", "Minha rua"),
+//                android.R.drawable.ic_menu_gallery, "ave", "adocao", "Minha rua"),
 //            Pet(5, "Leãonardo", "Curto", "Rua ***", "****",
-//                R.drawable.ic_menu_gallery, "gato", "perdidos", "Minha rua"),
+//                android.R.drawable.ic_menu_gallery, "gato", "perdidos", "Minha rua"),
 //            Pet(6, "Diana", "Bombaim", "Rua ***", "****",
-//                R.drawable.ic_menu_gallery, "outro", "perdidos", "Minha rua"),
+//                android.R.drawable.ic_menu_gallery, "outro", "perdidos", "Minha rua"),
 //            Pet(7, "Thor", "SRD", "Rua X", "****",
-//                R.drawable.ic_menu_gallery, "cachorro", "encontrados", "Minha rua")
+//                android.R.drawable.ic_menu_gallery, "cachorro", "encontrados", "Minha rua")
 //        )
 //    }
 //
@@ -146,7 +122,7 @@ fun FindEmTheme(content: @Composable () -> Unit) {
 //                        // Faz o texto preencher a largura restante
 //                        modifier = Modifier.fillMaxWidth(),
 //                        // Centraliza o texto dentro do espaço que ele ocupa
-//                        textAlign = TextAlign.Center
+//                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
 //                    )
 //                },
 //
@@ -318,7 +294,7 @@ fun FindEmTheme(content: @Composable () -> Unit) {
 //                            raca = raca,
 //                            endereco = endereco,
 //                            classificacao = classificacao,
-//                            imagemRes = R.drawable.ic_menu_gallery,
+//                            imagemRes = android.R.drawable.ic_menu_gallery,
 //                            especie = especie.lowercase(),
 //                            categoria = categoria.lowercase(),
 //                            ultimolocal = ultimolocal
