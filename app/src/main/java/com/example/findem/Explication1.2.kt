@@ -40,7 +40,7 @@ fun Explication1Page(
             Este aplicativo foi pensado para você que perdeu seu animal ou que está pensando em adotar um!
             Nas próximas telas, você entenderá como tudo funciona!
             """.trimIndent(),
-            fontSize = 14.sp,
+            fontSize = 15.sp,
             textAlign = TextAlign.Center,
             fontFamily = FontFamily.SansSerif,
             modifier = Modifier.padding(top = 16.dp)
