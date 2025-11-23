@@ -34,6 +34,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.findem.model.FindEmViewModel
+import com.example.findem.ui.MapScreen
 import com.example.findem.ui.theme.FindEmScreen
 
 class MainActivity : ComponentActivity() {
@@ -53,7 +54,15 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("home") {
-                        FindEmScreen(viewModel = viewModel)
+                        FindEmScreen(viewModel = viewModel,
+                            onMapClick = {navController.navigate("mapa")})
+                    }
+
+                    composable("mapa"){
+                        MapScreen(
+                            viewModel = viewModel,
+                            onBackClick = {navController.popBackStack()}
+                        )
                     }
 
                     // Futuramente: composable("formulario") { ... }

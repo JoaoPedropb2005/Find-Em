@@ -51,7 +51,9 @@ fun PetDialog(
                         imagemRes = android.R.drawable.ic_menu_gallery,
                         especie = especie.trim().lowercase(),
                         categoria = categoria.trim().lowercase(),
-                        descricaoLocal = descricaoLocal
+                        descricaoLocal = descricaoLocal,
+                        latitude = 0.0,
+                        longitude = 0.0
                     )
                     onConfirm(novoPet)
                 }
