@@ -1,5 +1,6 @@
 package com.example.findem.ui.theme
 
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +54,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.example.findem.LoginActivity
 import com.example.findem.model.Pet
+import com.example.findem.ui.FindEmDrawerContent
 import com.example.findem.ui.PetDialog
 import kotlinx.coroutines.launch
 
@@ -103,15 +106,14 @@ fun FindEmScreen(viewModel: FindEmViewModel,
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            // Chama o conteúdo visual que criamos no passo 1
             FindEmDrawerContent(
-                pets = viewModel.pets, // Passamos a lista real de pets para o preview
+                pets = viewModel.pets,
                 onCloseDrawer = {
                     scope.launch { drawerState.close() }
                 },
                 onLoginClick = {
-                    // Futuramente: Navegar para LoginActivity
                     scope.launch { drawerState.close() }
+                    context.startActivity(Intent(context, LoginActivity::class.java))
                 }
             )
         }

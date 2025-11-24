@@ -88,63 +88,12 @@ fun FindEmDrawerContent(
             Spacer(modifier = Modifier.height(16.dp))
             DrawerMenuItem(Icons.Default.Notifications, "Notificações") { onCloseDrawer() }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-
-                    Box(
-                        modifier = Modifier
-                            .background(Color(0xFF4CAF50), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 12.dp, vertical = 4.dp)
-                    ) {
-                        Text("PERDIDOS", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Row(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = true,
-                            onCheckedChange = {},
-                            colors = CheckboxDefaults.colors(checkedColor = Color.Black),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text("Cachorros", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Checkbox(
-                            checked = false,
-                            onCheckedChange = {},
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text("Gatos", fontSize = 12.sp, modifier = Modifier.padding(start = 8.dp))
-                    }
-
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(pets.take(3)) { pet ->
-                            DrawerPetItem(pet)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(450.dp))
 
             Text(
                 "Created by Julia Soares And João Pedro\n2025",
                 color = Color.White,
-                fontSize = 10.sp,
+                fontSize = 13.sp,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -174,27 +123,27 @@ fun DrawerMenuItem(icon: ImageVector, title: String, onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun DrawerPetItem(pet: Pet) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(100.dp)
-            .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
-    ) {
-        Image(
-            painter = painterResource(pet.imagemRes),
-            contentDescription = pet.nome,
-            modifier = Modifier
-                .width(90.dp)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
-            contentScale = ContentScale.Crop
-        )
-        Column(modifier = Modifier.padding(8.dp)) {
-            Text("Nome: ${pet.nome}", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            Text("Raça: ${pet.raca}", fontSize = 11.sp, color = Color.Gray)
-            Text("End: ${pet.endereco}", fontSize = 11.sp, color = Color.Gray, maxLines = 2)
-        }
-    }
-}
+//@Composable
+//fun DrawerPetItem(pet: Pet) {
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .height(100.dp)
+//            .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
+//    ) {
+//        Image(
+//            painter = painterResource(pet.imagemRes),
+//            contentDescription = pet.nome,
+//            modifier = Modifier
+//                .width(90.dp)
+//                .fillMaxHeight()
+//                .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
+//            contentScale = ContentScale.Crop
+//        )
+//        Column(modifier = Modifier.padding(8.dp)) {
+//            Text("Nome: ${pet.nome}", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+//            Text("Raça: ${pet.raca}", fontSize = 11.sp, color = Color.Gray)
+//            Text("End: ${pet.endereco}", fontSize = 11.sp, color = Color.Gray, maxLines = 2)
+//        }
+//    }
+//}
