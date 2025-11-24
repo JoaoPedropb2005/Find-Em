@@ -9,5 +9,13 @@ data class Pet(
     val imagemRes: Int,
     val especie: String,
     val categoria: String,
-    val descricaoLocal: String
+    val descricaoLocal: String,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
+)
+
+data class Notificacao(
+    val id: Int,
+    val mensagem: String,
+    val distancia: String
 )

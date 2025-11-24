@@ -47,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import com.example.findem.model.Pet
 import com.example.findem.ui.PetDialog
 
@@ -55,7 +56,11 @@ import com.example.findem.ui.PetDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FindEmScreen(viewModel: FindEmViewModel) {
+fun FindEmScreen(viewModel: FindEmViewModel,
+                 onMapClick: () -> Unit
+) {
+
+    val context = LocalContext.current
 
     val tabs = listOf("PERDIDOS", "ADOÇÃO", "ENCONTRADOS")
 
@@ -67,7 +72,8 @@ fun FindEmScreen(viewModel: FindEmViewModel) {
         PetDialog(
             onDismiss = { showDialog = false },
             onConfirm = { novoPet ->
-                viewModel.addPet(novoPet)
+                //viewModel.addPet(novoPet)
+                viewModel.addPetComGeocoding(context, novoPet)
                 viewModel.selectedTab.value = when(novoPet.categoria.lowercase()) {
                     "perdidos" -> 0
                     "adocao", "adoção" -> 1
@@ -110,7 +116,7 @@ fun FindEmScreen(viewModel: FindEmViewModel) {
                 },
 
                 actions = {
-                    IconButton(onClick = { /*  */ }) {
+                    IconButton(onClick = onMapClick) {
                         Icon(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = "Mapa",
