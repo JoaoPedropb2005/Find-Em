@@ -43,13 +43,19 @@ import com.example.findem.model.FindEmViewModel
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.example.findem.model.Pet
 import com.example.findem.ui.PetDialog
+import kotlinx.coroutines.launch
 
 //private val Any.value: Int
 //private val FindEmViewModel.selectedTab: Any
@@ -60,21 +66,24 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                  onMapClick: () -> Unit
 ) {
 
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
     val context = LocalContext.current
 
     val tabs = listOf("PERDIDOS", "ADOÇÃO", "ENCONTRADOS")
 
     val petsFiltrados = viewModel.getListaFiltrada()
 
-    var showDialog by remember { mutableStateOf(false)}
+    var showDialog by remember { mutableStateOf(false) }
 
-    if(showDialog){
+    if (showDialog) {
         PetDialog(
             onDismiss = { showDialog = false },
             onConfirm = { novoPet ->
                 //viewModel.addPet(novoPet)
                 viewModel.addPetComGeocoding(context, novoPet)
-                viewModel.selectedTab.value = when(novoPet.categoria.lowercase()) {
+                viewModel.selectedTab.value = when (novoPet.categoria.lowercase()) {
                     "perdidos" -> 0
                     "adocao", "adoção" -> 1
                     "encontrados" -> 2
@@ -91,99 +100,117 @@ fun FindEmScreen(viewModel: FindEmViewModel,
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = { /*  */ }) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Menu",
-                            tint = Color.Black,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            // Chama o conteúdo visual que criamos no passo 1
+            FindEmDrawerContent(
+                pets = viewModel.pets, // Passamos a lista real de pets para o preview
+                onCloseDrawer = {
+                    scope.launch { drawerState.close() }
                 },
-
-                title = {
-                    Text(
-                        "FIND'EM",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                },
-
-                actions = {
-                    IconButton(onClick = onMapClick) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = "Mapa",
-                            tint = Color.Black,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
-                },
-
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF4CAF50))
+                onLoginClick = {
+                    // Futuramente: Navegar para LoginActivity
+                    scope.launch { drawerState.close() }
+                }
             )
-        },
-
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showDialog = true },
-                containerColor = Color(0xFF4CAF50)
-            ) {
-                Icon(Icons.Default.Add, null, tint = Color.White)
-            }
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(Color(0xFFF5F5F5))
-        ) {
+    ) {
 
-            TabRow(selectedTabIndex = viewModel.selectedTab.value) {
-                tabs.forEachIndexed { i, t ->
-                    Tab(
-                        selected = viewModel.selectedTab.value == i,
-                        onClick = { viewModel.selectedTab.value = i },
-                        text = { Text(t) }
-                    )
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Menu",
+                                tint = Color.Black,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    },
+
+                    title = {
+                        Text(
+                            "FIND'EM",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    },
+
+                    actions = {
+                        IconButton(onClick = onMapClick) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Mapa",
+                                tint = Color.Black,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    },
+
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF4CAF50))
+                )
+            },
+
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { showDialog = true },
+                    containerColor = Color(0xFF4CAF50)
+                ) {
+                    Icon(Icons.Default.Add, null, tint = Color.White)
                 }
             }
-
-            Row(
+        ) { padding ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .fillMaxSize()
+                    .padding(padding)
+                    .background(Color(0xFFF5F5F5))
             ) {
-                FilterChip(viewModel.filtroCachorros.value, "Cachorros") {
-                    viewModel.filtroCachorros.value = !viewModel.filtroCachorros.value
-                }
-                FilterChip(viewModel.filtroGatos.value, "Gatos") {
-                    viewModel.filtroGatos.value = !viewModel.filtroGatos.value
-                }
-                FilterChip(viewModel.filtroAves.value, "Aves") {
-                    viewModel.filtroAves.value = !viewModel.filtroAves.value
-                }
-                FilterChip(viewModel.filtroOutros.value, "Outros") {
-                    viewModel.filtroOutros.value = !viewModel.filtroOutros.value
-                }
-            }
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(items = petsFiltrados) { pet ->
-                    PetCard(pet = pet)
+                TabRow(selectedTabIndex = viewModel.selectedTab.value) {
+                    tabs.forEachIndexed { i, t ->
+                        Tab(
+                            selected = viewModel.selectedTab.value == i,
+                            onClick = { viewModel.selectedTab.value = i },
+                            text = { Text(t) }
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    FilterChip(viewModel.filtroCachorros.value, "Cachorros") {
+                        viewModel.filtroCachorros.value = !viewModel.filtroCachorros.value
+                    }
+                    FilterChip(viewModel.filtroGatos.value, "Gatos") {
+                        viewModel.filtroGatos.value = !viewModel.filtroGatos.value
+                    }
+                    FilterChip(viewModel.filtroAves.value, "Aves") {
+                        viewModel.filtroAves.value = !viewModel.filtroAves.value
+                    }
+                    FilterChip(viewModel.filtroOutros.value, "Outros") {
+                        viewModel.filtroOutros.value = !viewModel.filtroOutros.value
+                    }
+                }
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(items = petsFiltrados) { pet ->
+                        PetCard(pet = pet)
+                    }
                 }
             }
         }
