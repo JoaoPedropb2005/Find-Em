@@ -55,7 +55,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.firebase.common.ktx)
+    //implementation(libs.firebase.common.ktx)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

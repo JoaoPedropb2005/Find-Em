@@ -123,27 +123,3 @@ fun DrawerMenuItem(icon: ImageVector, title: String, onClick: () -> Unit) {
     }
 }
 
-//@Composable
-//fun DrawerPetItem(pet: Pet) {
-//    Row(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .height(100.dp)
-//            .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
-//    ) {
-//        Image(
-//            painter = painterResource(pet.imagemRes),
-//            contentDescription = pet.nome,
-//            modifier = Modifier
-//                .width(90.dp)
-//                .fillMaxHeight()
-//                .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
-//            contentScale = ContentScale.Crop
-//        )
-//        Column(modifier = Modifier.padding(8.dp)) {
-//            Text("Nome: ${pet.nome}", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-//            Text("Raça: ${pet.raca}", fontSize = 11.sp, color = Color.Gray)
-//            Text("End: ${pet.endereco}", fontSize = 11.sp, color = Color.Gray, maxLines = 2)
-//        }
-//    }
-//}

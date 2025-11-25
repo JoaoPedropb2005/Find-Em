@@ -15,13 +15,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FindEm">
         <activity
-            android:name=".Explication1"
-            android:exported="false"
-            android:label="@string/title_activity_explication1"
-            android:theme="@style/Theme.FindEm" />
-        <activity
             android:name=".LoginActivity"
-            android:exported="false" /> <!-- <activity -->
+            android:exported="false" />
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false" />
+        <!-- <activity -->
         <!-- android:name=".Explication1" -->
         <!-- android:exported="false" /> -->
         <!-- <activity -->

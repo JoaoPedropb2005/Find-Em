@@ -61,9 +61,7 @@ fun MapScreen(
                     cameraPositionState = cameraPositionState,
                     uiSettings = MapUiSettings(zoomControlsEnabled = false)
                 ) {
-                    // Desenha os marcadores baseados na lista do ViewModel
                     viewModel.pets.forEach { pet ->
-                        // Só desenha se tiver coordenada válida
                         if (pet.latitude != 0.0 && pet.longitude != 0.0) {
                             Marker(
                                 state = MarkerState(position = LatLng(pet.latitude, pet.longitude)),
@@ -75,7 +73,6 @@ fun MapScreen(
                 }
             }
 
-            // --- CARD INFERIOR (Filtros e Notificações) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
@@ -96,7 +93,6 @@ fun MapScreen(
 
                     Divider()
 
-                    // Header Notificações
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
