@@ -88,7 +88,7 @@ fun FindEmDrawerContent(
             Spacer(modifier = Modifier.height(16.dp))
             DrawerMenuItem(Icons.Default.Notifications, "Notificações") { onCloseDrawer() }
 
-            Spacer(modifier = Modifier.height(450.dp))
+            Spacer(modifier = Modifier.height(545.dp))
 
             Text(
                 "Created by Julia Soares And João Pedro\n2025",

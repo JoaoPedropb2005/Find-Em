@@ -53,12 +53,12 @@ class FindEmViewModel : ViewModel() {
             var lat = 0.0
             var lon = 0.0
 
-            if (novoPetSemCoordenadas.endereco.isNotBlank()) {
+            if (novoPetSemCoordenadas.descricaoLocal.isNotBlank()) {
                 try {
                     val geocoder = Geocoder(context, Locale.getDefault())
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        geocoder.getFromLocationName(novoPetSemCoordenadas.endereco, 1) { addresses ->
+                        geocoder.getFromLocationName(novoPetSemCoordenadas.descricaoLocal, 1) { addresses ->
                             if (addresses.isNotEmpty()) {
                                 lat = addresses[0].latitude
                                 lon = addresses[0].longitude
@@ -68,7 +68,7 @@ class FindEmViewModel : ViewModel() {
                             }
                         }
                     } else {
-                        val addresses = geocoder.getFromLocationName(novoPetSemCoordenadas.endereco, 1)
+                        val addresses = geocoder.getFromLocationName(novoPetSemCoordenadas.descricaoLocal, 1)
                         if (!addresses.isNullOrEmpty()) {
                             lat = addresses[0].latitude
                             lon = addresses[0].longitude
