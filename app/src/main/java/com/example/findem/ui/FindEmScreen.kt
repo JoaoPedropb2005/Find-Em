@@ -59,9 +59,11 @@ import com.example.findem.model.Pet
 import com.example.findem.ui.FindEmDrawerContent
 import com.example.findem.ui.PetDialog
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Search
 
-//private val Any.value: Int
-//private val FindEmViewModel.selectedTab: Any
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +76,11 @@ fun FindEmScreen(viewModel: FindEmViewModel,
 
     val context = LocalContext.current
 
-    val tabs = listOf("PERDIDOS", "ADOÇÃO", "ENCONTRADOS")
+    val tabItems = listOf(
+        Pair("PERDIDOS", Icons.Default.Search),
+        Pair("ADOÇÃO", Icons.Default.Favorite),
+        Pair("ENCONTRADOS", Icons.Default.Done)
+    )
 
     val petsFiltrados = viewModel.getListaFiltrada()
 
@@ -84,7 +90,6 @@ fun FindEmScreen(viewModel: FindEmViewModel,
         PetDialog(
             onDismiss = { showDialog = false },
             onConfirm = { novoPet ->
-                //viewModel.addPet(novoPet)
                 viewModel.addPetComGeocoding(context, novoPet)
                 viewModel.selectedTab.value = when (novoPet.categoria.lowercase()) {
                     "perdidos" -> 0
@@ -158,6 +163,24 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                 )
             },
 
+            // COMEÇO DA MODIFICAÇÃO DA BARRA INFERIOR
+            bottomBar = {
+                // TabRow movida para o bottomBar
+                TabRow(
+                    selectedTabIndex = viewModel.selectedTab.value,
+                    modifier = Modifier.navigationBarsPadding()
+                ) {
+                    tabs.forEachIndexed { i, t ->
+                        Tab(
+                            selected = viewModel.selectedTab.value == i,
+                            onClick = { viewModel.selectedTab.value = i },
+                            text = { Text(t) }
+                        )
+                    }
+                }
+            },
+            // FIM DA MODIFICAÇÃO
+
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = { showDialog = true },
@@ -174,16 +197,7 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                     .background(Color(0xFFF5F5F5))
             ) {
 
-                TabRow(selectedTabIndex = viewModel.selectedTab.value) {
-                    tabs.forEachIndexed { i, t ->
-                        Tab(
-                            selected = viewModel.selectedTab.value == i,
-                            onClick = { viewModel.selectedTab.value = i },
-                            text = { Text(t) }
-                        )
-                    }
-                }
-
+                // começo do bloco de filtros
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -203,10 +217,12 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                         viewModel.filtroOutros.value = !viewModel.filtroOutros.value
                     }
                 }
+                // final do bloco de filtros
 
+                // começo do bloco de LazyVerticalGrid (Lista de Cards)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -214,6 +230,7 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                         PetCard(pet = pet)
                     }
                 }
+                // final do bloco de LazyVerticalGrid (Lista de Cards)
             }
         }
     }
