@@ -1,8 +1,6 @@
 package com.example.findem
 
 import android.app.Activity
-import android.content.Intent
-import android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -21,15 +19,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.findem.ui.theme.FindEmTheme
 
-class LoginActivity : ComponentActivity() {
+class RegisterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             FindEmThemeCustom {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LoginPage(modifier = Modifier.padding(innerPadding))
+                    RegisterPage(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -37,10 +36,13 @@ class LoginActivity : ComponentActivity() {
 }
 
 @Composable
-fun LoginPage(modifier: Modifier = Modifier) {
+fun RegisterPage(modifier: Modifier = Modifier) {
+    var nameUser by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    var passwordVerify by rememberSaveable { mutableStateOf("") }
 
+    //val context = LocalContext.current
     val activity = LocalActivity.current as Activity
 
     Column(
@@ -60,55 +62,75 @@ fun LoginPage(modifier: Modifier = Modifier) {
         )
 
         Text(
-            text = "Faça seu Login:",
+            text = "Bem-vindo/a!",
             fontSize = 24.sp
         )
 
         Spacer(modifier = Modifier.size(24.dp))
 
         OutlinedTextField(
+            value = nameUser,
+            label = { Text(text = "Digite seu nome de usuário") },
+            modifier = Modifier.fillMaxWidth(fraction = 0.9F),
+            onValueChange = { nameUser = it }
+        )
+
+        Spacer(modifier = Modifier.size(12.dp))
+
+        OutlinedTextField(
             value = email,
             label = { Text(text = "Digite seu e-mail") },
-            modifier = Modifier.fillMaxWidth(fraction = 0.9f),
+            modifier = Modifier.fillMaxWidth(fraction = 0.9F),
             onValueChange = { email = it }
         )
 
-        Spacer(modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.size(12.dp))
 
         OutlinedTextField(
             value = password,
             label = { Text(text = "Digite sua senha") },
-            modifier = Modifier.fillMaxWidth(fraction = 0.9f),
+            modifier = Modifier.fillMaxWidth(fraction = 0.9F),
             onValueChange = { password = it },
+            visualTransformation = PasswordVisualTransformation()
+        )
+
+        Spacer(modifier = Modifier.size(12.dp))
+
+        OutlinedTextField(
+            value = passwordVerify,
+            label = { Text(text = "Confirme sua senha") },
+            modifier = Modifier.fillMaxWidth(fraction = 0.9F),
+            onValueChange = { passwordVerify = it },
             visualTransformation = PasswordVisualTransformation()
         )
 
         Spacer(modifier = Modifier.size(24.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             Button(
                 onClick = {
-                    Toast.makeText(activity, "Login OK!", Toast.LENGTH_LONG).show()
-                    activity.startActivity(
-                        Intent(activity, MainActivity::class.java).setFlags(
-                            FLAG_ACTIVITY_SINGLE_TOP
-                        )
-                    )
+                    if (password == passwordVerify) {
+                        Toast.makeText(activity, "Conta criada!", Toast.LENGTH_LONG).show()
+                        activity.finish()
+                    } else {
+                        Toast.makeText(activity, "As senhas não conferem!", Toast.LENGTH_SHORT).show()
+                    }
                 },
-                enabled = email.isNotEmpty() && password.isNotEmpty()
+                enabled = email.isNotEmpty() && nameUser.isNotEmpty() && password.isNotEmpty() && passwordVerify.isNotEmpty()
             ) {
-                Text("Entrar")
+                Text("Registrar")
             }
 
             Button(
-                onClick = { activity.startActivity(
-                    Intent(activity, RegisterActivity::class.java)
-                ) }
+                onClick = {
+                    email = ""
+                    password = ""
+                    nameUser = ""
+                    passwordVerify = ""
+                },
+                enabled = email.isNotEmpty() || password.isNotEmpty() || nameUser.isNotEmpty() || passwordVerify.isNotEmpty()
             ) {
-                Text("Criar Conta")
+                Text("Limpar")
             }
         }
     }

@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            FindEmTheme {
+            FindEmThemeCustom {
                 val viewModel: FindEmViewModel by viewModels()
                 val navController = rememberNavController()
 
@@ -71,7 +71,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Futuramente: composable("formulario") { ... }
                 }
             }
         }
@@ -79,7 +78,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun FindEmTheme(content: @Composable () -> Unit) {
+fun FindEmThemeCustom(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = Color(0xFF4CAF50),
