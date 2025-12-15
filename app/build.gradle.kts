@@ -2,7 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id ("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")}
+    id ("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+    alias(libs.plugins.google.gms.google.services)
+}
 
 android {
     namespace = "com.example.findem"
@@ -55,6 +57,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.firebase.auth)
     //implementation(libs.firebase.common.ktx)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     testImplementation(libs.junit)

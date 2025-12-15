@@ -20,6 +20,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.findem.ui.theme.FindEmTheme
+import com.google.firebase.auth.auth
+import com.google.firebase.Firebase
 
 class RegisterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,12 +111,20 @@ fun RegisterPage(modifier: Modifier = Modifier) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             Button(
                 onClick = {
-                    if (password == passwordVerify) {
-                        Toast.makeText(activity, "Conta criada!", Toast.LENGTH_LONG).show()
-                        activity.finish()
-                    } else {
-                        Toast.makeText(activity, "As senhas não conferem!", Toast.LENGTH_SHORT).show()
-                    }
+                    Firebase.auth.createUserWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(activity) { task ->
+                            if (task.isSuccessful) {
+                                Toast.makeText(
+                                    activity,
+                                    "Registro OK!", Toast.LENGTH_LONG
+                                ).show()
+                            } else {
+                                Toast.makeText(
+                                    activity,
+                                    "Registro FALHOU!", Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
                 },
                 enabled = email.isNotEmpty() && nameUser.isNotEmpty() && password.isNotEmpty() && passwordVerify.isNotEmpty()
             ) {
