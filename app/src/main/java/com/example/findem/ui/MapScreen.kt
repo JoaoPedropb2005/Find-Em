@@ -1,8 +1,8 @@
 package com.example.findem.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
+/*import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically*/
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,7 +22,7 @@ import com.example.findem.model.Notificacao
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-
+//commit
 //private val Icons.Filled.NotificationsActive: Any
 
 @OptIn(ExperimentalMaterial3Api::class)

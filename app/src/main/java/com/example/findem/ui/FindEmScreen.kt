@@ -59,9 +59,12 @@ import com.example.findem.model.Pet
 import com.example.findem.ui.FindEmDrawerContent
 import com.example.findem.ui.PetDialog
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Map // Nova importação para o ícone do Mapa
 
-//private val Any.value: Int
-//private val FindEmViewModel.selectedTab: Any
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +77,16 @@ fun FindEmScreen(viewModel: FindEmViewModel,
 
     val context = LocalContext.current
 
-    val tabs = listOf("PERDIDOS", "ADOÇÃO", "ENCONTRADOS")
+    // ATUALIZAÇÃO: Adicionando a aba MAPA
+    val tabItems = listOf(
+        Pair("PERDIDOS", Icons.Default.Search),
+        Pair("ADOÇÃO", Icons.Default.Favorite),
+        Pair("ENCONTRADOS", Icons.Default.Done),
+        Pair("MAPA", Icons.Filled.Map) // Novo item para o Mapa
+    )
+
+    // O índice da aba Mapa é o último (3)
+    val MAP_TAB_INDEX = tabItems.size - 1
 
     val petsFiltrados = viewModel.getListaFiltrada()
 
@@ -84,8 +96,9 @@ fun FindEmScreen(viewModel: FindEmViewModel,
         PetDialog(
             onDismiss = { showDialog = false },
             onConfirm = { novoPet ->
-                //viewModel.addPet(novoPet)
                 viewModel.addPetComGeocoding(context, novoPet)
+
+                // Lógica para selecionar a aba após a postagem
                 viewModel.selectedTab.value = when (novoPet.categoria.lowercase()) {
                     "perdidos" -> 0
                     "adocao", "adoção" -> 1
@@ -93,6 +106,7 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                     else -> 0
                 }
 
+                // Reseta os filtros de espécie
                 viewModel.filtroCachorros.value = false
                 viewModel.filtroGatos.value = false
                 viewModel.filtroAves.value = false
@@ -143,8 +157,9 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                         )
                     },
 
+                    // O ícone de mapa na TopBar foi removido, pois agora está na BottomBar
                     actions = {
-                        IconButton(onClick = onMapClick) {
+                        /* IconButton(onClick = onMapClick) {
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
                                 contentDescription = "Mapa",
@@ -152,13 +167,41 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
+                        */
+                        Spacer(modifier = Modifier.size(56.dp))
                     },
 
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF4CAF50))
                 )
             },
 
+            // BARRA INFERIOR (BOTTOM BAR)
+            bottomBar = {
+                TabRow(
+                    selectedTabIndex = if (viewModel.selectedTab.value == MAP_TAB_INDEX) -1 else viewModel.selectedTab.value, // Desseleciona se estiver no mapa
+                    modifier = Modifier.navigationBarsPadding()
+                ) {
+                    tabItems.forEachIndexed { i, tabItem ->
+                        Tab(
+                            selected = viewModel.selectedTab.value == i,
+                            onClick = {
+                                if (i == MAP_TAB_INDEX) {
+                                    // Se clicar no Mapa, chama a ação e NÃO muda a aba do VM
+                                    onMapClick()
+                                } else {
+                                    // Se clicar em PERDIDOS/ADOÇÃO/ENCONTRADOS, muda a aba
+                                    viewModel.selectedTab.value = i
+                                }
+                            },
+                            icon = { Icon(tabItem.second, contentDescription = tabItem.first) },
+                            text = { Text(tabItem.first) }
+                        )
+                    }
+                }
+            },
+
             floatingActionButton = {
+                // Mantemos o FAB, que é independente da navegação principal da BottomBar
                 FloatingActionButton(
                     onClick = { showDialog = true },
                     containerColor = Color(0xFF4CAF50)
@@ -167,58 +210,60 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                 }
             }
         ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(Color(0xFFF5F5F5))
-            ) {
 
-                TabRow(selectedTabIndex = viewModel.selectedTab.value) {
-                    tabs.forEachIndexed { i, t ->
-                        Tab(
-                            selected = viewModel.selectedTab.value == i,
-                            onClick = { viewModel.selectedTab.value = i },
-                            text = { Text(t) }
-                        )
-                    }
-                }
-
-                Row(
+            // CONTEÚDO PRINCIPAL: SÓ MOSTRA SE NÃO ESTIVER NA ABA MAPA
+            if (viewModel.selectedTab.value != MAP_TAB_INDEX) {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .fillMaxSize()
+                        .padding(padding)
+                        .background(Color(0xFFF5F5F5))
                 ) {
-                    FilterChip(viewModel.filtroCachorros.value, "Cachorros") {
-                        viewModel.filtroCachorros.value = !viewModel.filtroCachorros.value
-                    }
-                    FilterChip(viewModel.filtroGatos.value, "Gatos") {
-                        viewModel.filtroGatos.value = !viewModel.filtroGatos.value
-                    }
-                    FilterChip(viewModel.filtroAves.value, "Aves") {
-                        viewModel.filtroAves.value = !viewModel.filtroAves.value
-                    }
-                    FilterChip(viewModel.filtroOutros.value, "Outros") {
-                        viewModel.filtroOutros.value = !viewModel.filtroOutros.value
-                    }
-                }
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(items = petsFiltrados) { pet ->
-                        PetCard(pet = pet)
+                    // começo do bloco de filtros
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        FilterChip(viewModel.filtroCachorros.value, "Cachorros") {
+                            viewModel.filtroCachorros.value = !viewModel.filtroCachorros.value
+                        }
+                        FilterChip(viewModel.filtroGatos.value, "Gatos") {
+                            viewModel.filtroGatos.value = !viewModel.filtroGatos.value
+                        }
+                        FilterChip(viewModel.filtroAves.value, "Aves") {
+                            viewModel.filtroAves.value = !viewModel.filtroAves.value
+                        }
+                        FilterChip(viewModel.filtroOutros.value, "Outros") {
+                            viewModel.filtroOutros.value = !viewModel.filtroOutros.value
+                        }
                     }
+                    // final do bloco de filtros
+
+                    // começo do bloco de LazyVerticalGrid (Lista de Cards)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(items = petsFiltrados) { pet ->
+                            PetCard(pet = pet)
+                        }
+                    }
+                    // final do bloco de LazyVerticalGrid (Lista de Cards)
                 }
+            } else {
+                // IMPORTANTE: Adiciona um Spacer para preencher o espaço, mas o mapa
+                // é gerenciado pela navegação principal (onMapClick)
+                Spacer(modifier = Modifier.fillMaxSize())
             }
         }
     }
 }
-
+// ... (O restante das funções PetCard, FilterChip, etc. permanece inalterado)
 @Composable
 fun PetCard(pet: com.example.findem.model.Pet) {
     Column(

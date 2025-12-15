@@ -3,26 +3,20 @@ package com.example.findem.model
 import android.content.Context
 import android.location.Geocoder
 import android.os.Build
-import android.widget.Toast
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.toMutableStateList
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.util.Locale
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
-import androidx.lifecycle.ViewModel
-import com.example.findem.model.Pet
 
 class FindEmViewModel : ViewModel() {
 
+    // --- VARIÁVEIS DE ESTADO DA APLICAÇÃO ---
     private val _pets = getMockPets().toMutableStateList()
 
     val pets: List<Pet>
@@ -46,40 +40,82 @@ class FindEmViewModel : ViewModel() {
         Notificacao(3, "Ave perdida a 3km", "3km")
     )
 
+    // --- VARIÁVEIS PARA LOCALIDADES DO IBGE (AGORA USADAS) ---
+    val estadosIBGE = mutableStateOf<List<Estado>>(emptyList())
+    val municipiosIBGE = mutableStateOf<List<Municipio>>(emptyList())
+
+    // Instância do serviço Retrofit para IBGE
+    private val ibgeService: IBGEService = RetrofitClient.ibgeService
+
+    init {
+        // Inicia a busca pelos estados ao criar o ViewModel
+        fetchEstados()
+    }
+
+    // --- FUNÇÕES IBGE (Busca de Estados e Municípios) ---
+
+    fun fetchEstados() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                estadosIBGE.value = ibgeService.getEstados()
+            } catch (e: Exception) {
+                Log.e("IBGE_API", "Erro ao buscar estados: ${e.message}")
+            }
+        }
+    }
+
+    fun fetchMunicipios(ufSigla: String) {
+        // Limpa a lista de municípios anterior enquanto busca
+        municipiosIBGE.value = emptyList()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                municipiosIBGE.value = ibgeService.getMunicipiosPorEstado(ufSigla)
+            } catch (e: Exception) {
+                Log.e("IBGE_API", "Erro ao buscar municípios para $ufSigla: ${e.message}")
+            }
+        }
+    }
+
+    // --- FUNÇÃO DE GEOCODING (CORRIGIDA) ---
+
     fun addPetComGeocoding(context: Context, novoPetSemCoordenadas: Pet) {
 
-        viewModelScope.launch(Dispatchers.IO) { // Roda fora da tela principal (IO)
+        val enderecoCompleto = novoPetSemCoordenadas.endereco // Usando o endereço formatado
 
-            var lat = 0.0
-            var lon = 0.0
+        if (enderecoCompleto.isBlank()) {
+            salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
+            return
+        }
 
-            if (novoPetSemCoordenadas.descricaoLocal.isNotBlank()) {
-                try {
-                    val geocoder = Geocoder(context, Locale.getDefault())
+        viewModelScope.launch(Dispatchers.IO) {
+            val geocoder = Geocoder(context, Locale.getDefault())
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        geocoder.getFromLocationName(novoPetSemCoordenadas.descricaoLocal, 1) { addresses ->
-                            if (addresses.isNotEmpty()) {
-                                lat = addresses[0].latitude
-                                lon = addresses[0].longitude
-                                salvarPetFinal(novoPetSemCoordenadas, lat, lon)
-                            } else {
-                                salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
-                            }
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    // Novo método assíncrono para Tiramisu+
+                    geocoder.getFromLocationName(enderecoCompleto, 1) { addresses ->
+                        if (addresses.isNotEmpty()) {
+                            val lat = addresses[0].latitude
+                            val lon = addresses[0].longitude
+                            salvarPetFinal(novoPetSemCoordenadas, lat, lon)
+                        } else {
+                            salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
                         }
-                    } else {
-                        val addresses = geocoder.getFromLocationName(novoPetSemCoordenadas.descricaoLocal, 1)
-                        if (!addresses.isNullOrEmpty()) {
-                            lat = addresses[0].latitude
-                            lon = addresses[0].longitude
-                        }
-                        salvarPetFinal(novoPetSemCoordenadas, lat, lon)
                     }
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                    salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
+                } else {
+                    // Método síncrono para versões antigas
+                    val addresses = geocoder.getFromLocationName(enderecoCompleto, 1)
+                    if (!addresses.isNullOrEmpty()) {
+                        val lat = addresses[0].latitude
+                        val lon = addresses[0].longitude
+                        salvarPetFinal(novoPetSemCoordenadas, lat, lon)
+                    } else {
+                        salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
+                    }
                 }
-            } else {
+            } catch (e: IOException) {
+                Log.e("Geocoding", "Erro de Geocoding para $enderecoCompleto: ${e.message}")
                 salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
             }
         }
@@ -96,17 +132,18 @@ class FindEmViewModel : ViewModel() {
         }
     }
 
+    // ... (getMockPets, addPet, removePet, getListaFiltrada continuam os mesmos)
     private fun getMockPets() =
         listOf(
-            Pet(1, "Ludovico", "Pelo curto BR", "Rua A", "****",
+            Pet(1, "Ludovico", "Pelo curto BR", "Rua A, PE", "****",
                 android.R.drawable.ic_menu_gallery, "cachorro", "perdidos", "Boa Viagem", -8.1111, -34.8910),
-            Pet(2, "Sarapatel", "Europeu", "Rua B", "****",
+            Pet(2, "Sarapatel", "Europeu", "Rua B, PE", "****",
                 android.R.drawable.ic_menu_gallery, "cachorro", "adocao", "Pina", -8.0930, -34.8800),
-            Pet(3, "Snowbell", "Persa", "Rua C", "****",
+            Pet(3, "Snowbell", "Persa", "Rua C, PE", "****",
                 android.R.drawable.ic_menu_gallery, "gato", "perdidos", "Derby", -8.0570, -34.9000),
-            Pet(4, "Luciano", "Doméstico", "Rua D", "****",
+            Pet(4, "Luciano", "Doméstico", "Rua D, CE", "****",
                 android.R.drawable.ic_menu_gallery, "ave", "adocao", "Recife Antigo", -8.0630, -34.8710),
-            Pet(5, "Leãonardo", "Curto", "Rua E", "****",
+            Pet(5, "Leãonardo", "Curto", "Rua E, BA", "****",
                 android.R.drawable.ic_menu_gallery, "gato", "perdidos", "Olinda", -8.0090, -34.8550),
             Pet(6, "Diana", "Bombaim", "Rua ***", "****",
                 android.R.drawable.ic_menu_gallery, "outro", "perdidos", "Minha rua"),
@@ -141,6 +178,4 @@ class FindEmViewModel : ViewModel() {
                     (filtroOutros.value && pet.especie == "outro")
         }
     }
-
 }
-
