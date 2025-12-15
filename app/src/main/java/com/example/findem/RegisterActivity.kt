@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.example.findem.ui.theme.FindEmTheme
 import com.google.firebase.auth.auth
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 
 class RegisterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

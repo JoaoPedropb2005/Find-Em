@@ -36,7 +36,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.findem.model.FindEmViewModel
 import com.example.findem.ui.MapScreen
 import com.example.findem.ui.theme.FindEmScreen
-
+import com.example.findem.ui.FindEmRoute
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,26 +45,31 @@ class MainActivity : ComponentActivity() {
                 val viewModel: FindEmViewModel by viewModels()
                 val navController = rememberNavController()
 
-                NavHost(navController = navController, startDestination = "boasvindas") {
-                    composable("boasvindas") {
+                val destinoInicial = intent.getStringExtra("destino_inicial") ?: "boasvindas"
+
+                NavHost(navController = navController, startDestination = destinoInicial) {
+                    composable(FindEmRoute.WELCOME) {
                         Welcome(
-                            onContinueClick = { navController.navigate("explicacao") }
+                            onContinueClick = { navController.navigate(FindEmRoute.EXPLICATION) }
                         )
                     }
 
-                    composable("explicacao") {
+                    composable(FindEmRoute.EXPLICATION) {
                         Explication1Page(
-                            onContinueClick = { navController.navigate("home") }
+                            onContinueClick = { navController.navigate(FindEmRoute.HOME) {
+                                popUpTo(FindEmRoute.WELCOME) { inclusive = true }
+                                }
+                            }
                         )
                     }
 
 
-                    composable("home") {
+                    composable(FindEmRoute.HOME) {
                         FindEmScreen(viewModel = viewModel,
-                            onMapClick = {navController.navigate("mapa")})
+                            onMapClick = {navController.navigate(FindEmRoute.MAP)})
                     }
 
-                    composable("mapa"){
+                    composable(FindEmRoute.MAP){
                         MapScreen(
                             viewModel = viewModel,
                             onBackClick = {navController.popBackStack()}

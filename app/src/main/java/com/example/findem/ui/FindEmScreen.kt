@@ -64,7 +64,8 @@ import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Map // Nova importação para o ícone do Mapa
-
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,12 +123,16 @@ fun FindEmScreen(viewModel: FindEmViewModel,
         drawerContent = {
             FindEmDrawerContent(
                 pets = viewModel.pets,
-                onCloseDrawer = {
-                    scope.launch { drawerState.close() }
-                },
+                userName = viewModel.userName,
+                isUserLoggedIn = viewModel.currentUser != null,
+                onCloseDrawer = { scope.launch { drawerState.close() } },
                 onLoginClick = {
                     scope.launch { drawerState.close() }
                     context.startActivity(Intent(context, LoginActivity::class.java))
+                },
+                onLogoutClick = {
+                    viewModel.logout()
+                    scope.launch { drawerState.close() }
                 }
             )
         }
@@ -203,7 +208,17 @@ fun FindEmScreen(viewModel: FindEmViewModel,
             floatingActionButton = {
                 // Mantemos o FAB, que é independente da navegação principal da BottomBar
                 FloatingActionButton(
-                    onClick = { showDialog = true },
+                    onClick = {
+                        if (viewModel.currentUser != null) {
+                            showDialog = true
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Você precisa estar logado para criar postagens.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
                     containerColor = Color(0xFF4CAF50)
                 ) {
                     Icon(Icons.Default.Add, null, tint = Color.White)
@@ -262,6 +277,18 @@ fun FindEmScreen(viewModel: FindEmViewModel,
             }
         }
     }
+
+    if (showDialog) {
+        PetDialog(
+            onDismiss = { showDialog = false },
+            onConfirm = { pet ->
+                viewModel.addPetComGeocoding(context, pet)
+                showDialog = false
+            },
+            viewModel = viewModel
+        )
+    }
+
 }
 // ... (O restante das funções PetCard, FilterChip, etc. permanece inalterado)
 @Composable

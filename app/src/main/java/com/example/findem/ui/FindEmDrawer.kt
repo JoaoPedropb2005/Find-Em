@@ -28,8 +28,11 @@ import com.example.findem.model.Pet
 @Composable
 fun FindEmDrawerContent(
     pets: List<Pet>,
+    userName: String?,
+    isUserLoggedIn: Boolean,
     onCloseDrawer: () -> Unit,
-    onLoginClick: () -> Unit
+    onLoginClick: () -> Unit,
+    onLogoutClick: () -> Unit
 ) {
     ModalDrawerSheet(
         modifier = Modifier.width(300.dp),
@@ -47,21 +50,53 @@ fun FindEmDrawerContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        "Usuário Não Logado",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Logar / Criar conta",
-                        color = Color(0xFF1565C0),
-                        fontSize = 12.sp,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable { onLoginClick() }
-                    )
+                Column(modifier = Modifier.weight(1f)) {
+                    if (isUserLoggedIn) {
+                        Text(
+                            text = "Olá, $userName",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Sair (Logout)",
+                            color = Color(0xFFBBDEFB), // Azul claro
+                            fontSize = 13.sp,
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier.clickable { onLogoutClick() }
+                        )
+                    } else {
+                        Text(
+                            text = "Usuário Não Logado",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Logar / Criar conta",
+                            color = Color(0xFF1565C0),
+                            fontSize = 12.sp,
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier.clickable { onLoginClick() }
+                        )
+                    }
                 }
+//                Column {
+//                    Text(
+//                        "Usuário Não Logado",
+//                        color = Color.White,
+//                        fontSize = 16.sp,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                    Text(
+//                        "Logar / Criar conta",
+//                        color = Color(0xFF1565C0),
+//                        fontSize = 12.sp,
+//                        textDecoration = TextDecoration.Underline,
+//                        modifier = Modifier.clickable { onLoginClick() }
+//                    )
+//                }
 
                 Box(
                     modifier = Modifier

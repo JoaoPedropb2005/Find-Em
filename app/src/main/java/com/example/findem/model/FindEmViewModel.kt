@@ -13,6 +13,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.Locale
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
 class FindEmViewModel : ViewModel() {
 
@@ -39,6 +44,29 @@ class FindEmViewModel : ViewModel() {
         Notificacao(2, "Gato perdido a 2km", "2km"),
         Notificacao(3, "Ave perdida a 3km", "3km")
     )
+
+    var currentUser by mutableStateOf<FirebaseUser?>(null)
+        private set
+
+    var userName by mutableStateOf<String?>("Visitante")
+        private set
+
+    private val authStateListener = FirebaseAuth.AuthStateListener { auth ->
+        val user = auth.currentUser
+        currentUser = user
+        userName = user?.displayName?.takeIf { it.isNotBlank() }
+            ?: user?.email?.substringBefore("@")
+                    ?: "Visitante"
+    }
+
+    init {
+        FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
+    }
+
+    fun logout() {
+        FirebaseAuth.getInstance().signOut()
+    }
+
 
     // --- VARIÁVEIS PARA LOCALIDADES DO IBGE (AGORA USADAS) ---
     val estadosIBGE = mutableStateOf<List<Estado>>(emptyList())

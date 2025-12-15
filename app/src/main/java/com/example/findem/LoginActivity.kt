@@ -96,12 +96,15 @@ fun LoginPage(modifier: Modifier = Modifier) {
                     Firebase.auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener(activity) { task ->
                             if (task.isSuccessful) {
-//                            activity.startActivity(
-//                                Intent(activity, MainActivity::class.java).setFlags(
-//                                    FLAG_ACTIVITY_SINGLE_TOP
-//                                )
-//                            )
                                 Toast.makeText(activity, "Login OK!", Toast.LENGTH_LONG).show()
+
+                                val intent = Intent(activity, MainActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    putExtra("destino_inicial", "home")
+                                }
+                                activity.startActivity(intent)
+                                activity.finish()
+
                             } else {
                                 Toast.makeText(activity, "Login FALHOU!", Toast.LENGTH_LONG).show()
                             }
