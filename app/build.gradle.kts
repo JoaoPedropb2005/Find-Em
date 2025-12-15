@@ -41,10 +41,29 @@ android {
 
 dependencies {
 
-    implementation("com.google.android.gms:play-services-maps:19.2.0")
-    implementation("com.google.android.gms:play-services-location:21.3.0")
-    // Google maps for compose
-    implementation("com.google.maps.android:maps-compose:2.8.0")
+    dependencies {
+
+        implementation("com.google.android.gms:play-services-maps:19.2.0")
+        implementation("com.google.android.gms:play-services-location:21.3.0")
+        // Google maps for compose
+        implementation("com.google.maps.android:maps-compose:2.8.0")
+
+        // Declaração das versões de Retrofit usando sintaxe Kotlin (val)
+        val retrofit_version = "2.9.0"
+        val okhttp_version = "4.12.0"
+
+        // Uso direto das variáveis
+        implementation("com.squareup.retrofit2:retrofit:$retrofit_version")
+        implementation("com.squareup.retrofit2:converter-gson:$retrofit_version")
+        implementation("com.squareup.okhttp3:okhttp:$okhttp_version")
+        implementation("com.squareup.okhttp3:logging-interceptor:$okhttp_version")
+
+        //icone mapa
+        implementation("androidx.compose.material:material-icons-extended")
+
+        implementation(libs.androidx.core.ktx)
+        // ... (restante das suas dependências)
+    }
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -56,6 +75,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.runtime)
+    implementation(libs.androidx.compose.foundation)
     //implementation(libs.firebase.common.ktx)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     testImplementation(libs.junit)
