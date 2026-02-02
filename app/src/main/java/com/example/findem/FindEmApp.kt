@@ -7,6 +7,7 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.cloudinary.android.MediaManager
 
 class FindEmApp : Application() {
     val FLAGS = FLAG_ACTIVITY_SINGLE_TOP or
@@ -15,6 +16,11 @@ class FindEmApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        val config = HashMap<String, String>()
+        config["cloud_name"] = "ddjnkgpxd"
+        MediaManager.init(this, config)
+
         Firebase.auth.addAuthStateListener { firebaseAuth ->
             if (firebaseAuth.currentUser != null) {
                 goToMain()

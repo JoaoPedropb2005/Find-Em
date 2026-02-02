@@ -56,8 +56,7 @@ fun LoginPage(modifier: Modifier = Modifier) {
         Image(
             painter = painterResource(id = R.drawable.findem_logo),
             contentDescription = "Logo Findem",
-            modifier = //modifier
-                //.padding(bottom = 10.dp)
+            modifier =
                 modifier.size(150.dp)
         )
 

@@ -1,6 +1,7 @@
 package com.example.findem.ui.theme
 
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -65,6 +66,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Map // Nova importação para o ícone do Mapa
 import android.widget.Toast
+import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,31 +94,6 @@ fun FindEmScreen(viewModel: FindEmViewModel,
     val petsFiltrados = viewModel.getListaFiltrada()
 
     var showDialog by remember { mutableStateOf(false) }
-
-    if (showDialog) {
-        PetDialog(
-            onDismiss = { showDialog = false },
-            onConfirm = { novoPet ->
-                viewModel.addPetComGeocoding(context, novoPet)
-
-                // Lógica para selecionar a aba após a postagem
-                viewModel.selectedTab.value = when (novoPet.categoria.lowercase()) {
-                    "perdidos" -> 0
-                    "adocao", "adoção" -> 1
-                    "encontrados" -> 2
-                    else -> 0
-                }
-
-                // Reseta os filtros de espécie
-                viewModel.filtroCachorros.value = false
-                viewModel.filtroGatos.value = false
-                viewModel.filtroAves.value = false
-                viewModel.filtroOutros.value = false
-
-                showDialog = false
-            }
-        )
-    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -180,7 +157,6 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                 )
             },
 
-            // BARRA INFERIOR (BOTTOM BAR)
             bottomBar = {
                 TabRow(
                     selectedTabIndex = if (viewModel.selectedTab.value == MAP_TAB_INDEX) -1 else viewModel.selectedTab.value, // Desseleciona se estiver no mapa
@@ -206,7 +182,6 @@ fun FindEmScreen(viewModel: FindEmViewModel,
             },
 
             floatingActionButton = {
-                // Mantemos o FAB, que é independente da navegação principal da BottomBar
                 FloatingActionButton(
                     onClick = {
                         if (viewModel.currentUser != null) {
@@ -226,7 +201,6 @@ fun FindEmScreen(viewModel: FindEmViewModel,
             }
         ) { padding ->
 
-            // CONTEÚDO PRINCIPAL: SÓ MOSTRA SE NÃO ESTIVER NA ABA MAPA
             if (viewModel.selectedTab.value != MAP_TAB_INDEX) {
                 Column(
                     modifier = Modifier
@@ -271,8 +245,6 @@ fun FindEmScreen(viewModel: FindEmViewModel,
                     // final do bloco de LazyVerticalGrid (Lista de Cards)
                 }
             } else {
-                // IMPORTANTE: Adiciona um Spacer para preencher o espaço, mas o mapa
-                // é gerenciado pela navegação principal (onMapClick)
                 Spacer(modifier = Modifier.fillMaxSize())
             }
         }
@@ -281,8 +253,24 @@ fun FindEmScreen(viewModel: FindEmViewModel,
     if (showDialog) {
         PetDialog(
             onDismiss = { showDialog = false },
-            onConfirm = { pet ->
-                viewModel.addPetComGeocoding(context, pet)
+            onConfirm = { petTemporario ->
+                val uriImagem = if (petTemporario.imageUrl.isNotBlank())
+                    Uri.parse(petTemporario.imageUrl) else null
+
+                viewModel.salvarPetComFoto(uriImagem, petTemporario)
+
+                viewModel.selectedTab.value = when (petTemporario.categoria.lowercase()) {
+                    "perdidos" -> 0
+                    "adocao", "adoção" -> 1
+                    "encontrados" -> 2
+                    else -> 0
+                }
+
+                viewModel.filtroCachorros.value = false
+                viewModel.filtroGatos.value = false
+                viewModel.filtroAves.value = false
+                viewModel.filtroOutros.value = false
+
                 showDialog = false
             },
             viewModel = viewModel
@@ -290,7 +278,6 @@ fun FindEmScreen(viewModel: FindEmViewModel,
     }
 
 }
-// ... (O restante das funções PetCard, FilterChip, etc. permanece inalterado)
 @Composable
 fun PetCard(pet: com.example.findem.model.Pet) {
     Column(
@@ -300,16 +287,31 @@ fun PetCard(pet: com.example.findem.model.Pet) {
             .background(Color.White)
             .padding(8.dp)
     ) {
-
-        Image(
-            painter = painterResource(id = pet.imagemRes),
-            contentDescription = pet.nome,
-            modifier = Modifier
-                .height(120.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp)),
-            contentScale = ContentScale.Crop
-        )
+        if (pet.imageUrl.isNotBlank()) {
+            AsyncImage(
+                model = pet.imageUrl,
+                contentDescription = pet.nome,
+                modifier = Modifier
+                    .height(120.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Crop,
+                // Placeholders enquanto carrega ou se der erro
+                placeholder = painterResource(id = android.R.drawable.ic_menu_camera),
+                error = painterResource(id = android.R.drawable.ic_menu_report_image)
+            )
+        } else {
+            // Imagem padrão se não houver foto
+            Image(
+                painter = painterResource(id = android.R.drawable.ic_menu_gallery),
+                contentDescription = pet.nome,
+                modifier = Modifier
+                    .height(120.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Crop
+            )
+        }
 
         Spacer(Modifier.height(6.dp))
 

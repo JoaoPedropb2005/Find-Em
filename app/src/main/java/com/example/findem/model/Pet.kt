@@ -1,6 +1,5 @@
 package com.example.findem.model
 
-// --- CLIENTE RETROFIT (CÓDIGO DE INFRAESTRUTURA) ---
 import com.google.gson.GsonBuilder
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -9,17 +8,20 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 
 data class Pet(
-    val id: Int,
-    val nome: String,
-    val raca: String,
-    val endereco: String,
-    val classificacao: String,
-    val imagemRes: Int,
-    val especie: String,
-    val categoria: String,
-    val descricaoLocal: String,
+    val id: String = "",
+    val nome: String = "",
+    val raca: String = "",
+    val endereco: String = "",
+    val classificacao: String = "",
+    val imageUrl: String = "",
+    val especie: String = "",
+    val categoria: String = "",
+    val descricaoLocal: String = "",
     val latitude: Double = 0.0,
-    val longitude: Double = 0.0
+    val longitude: Double = 0.0,
+
+    val userId: String = "",
+    val dataCriacao: Long = 0L
 )
 
 data class Notificacao(
@@ -27,8 +29,6 @@ data class Notificacao(
     val mensagem: String,
     val distancia: String
 )
-
-// ... (Seu código Pet e Notificacao existentes)
 
 // --- NOVOS MODELOS PARA O IBGE ---
 

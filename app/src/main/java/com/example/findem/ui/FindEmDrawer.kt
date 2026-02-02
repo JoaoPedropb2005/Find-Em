@@ -82,21 +82,6 @@ fun FindEmDrawerContent(
                         )
                     }
                 }
-//                Column {
-//                    Text(
-//                        "Usuário Não Logado",
-//                        color = Color.White,
-//                        fontSize = 16.sp,
-//                        fontWeight = FontWeight.Bold
-//                    )
-//                    Text(
-//                        "Logar / Criar conta",
-//                        color = Color(0xFF1565C0),
-//                        fontSize = 12.sp,
-//                        textDecoration = TextDecoration.Underline,
-//                        modifier = Modifier.clickable { onLoginClick() }
-//                    )
-//                }
 
                 Box(
                     modifier = Modifier

@@ -48,7 +48,7 @@ dependencies {
         implementation("com.google.android.gms:play-services-maps:19.2.0")
         implementation("com.google.android.gms:play-services-location:21.3.0")
         // Google maps for compose
-        implementation("com.google.maps.android:maps-compose:2.8.0")
+        implementation("com.google.maps.android:maps-compose:4.4.1")
 
         // Declaração das versões de Retrofit usando sintaxe Kotlin (val)
         val retrofit_version = "2.9.0"
@@ -65,6 +65,10 @@ dependencies {
 
         implementation(libs.androidx.core.ktx)
         // ... (restante das suas dependências)
+
+        implementation("com.cloudinary:cloudinary-android:2.3.1")
+        implementation("io.coil-kt:coil-compose:2.6.0")
+        implementation("com.google.android.gms:play-services-location:21.0.1")
     }
 
     implementation(libs.androidx.core.ktx)
@@ -81,6 +85,8 @@ dependencies {
 
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.firebase.firestore)
+    implementation(libs.androidx.foundation.layout)
 
     //implementation(libs.firebase.common.ktx)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

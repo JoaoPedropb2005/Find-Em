@@ -1,9 +1,13 @@
 package com.example.findem.model
 
+import android.app.Application
 import android.content.Context
 import android.location.Geocoder
+import android.location.Location
+import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.toMutableStateList
@@ -16,68 +20,112 @@ import java.util.Locale
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.cloudinary.android.MediaManager
+import com.cloudinary.android.callback.ErrorInfo
+import com.cloudinary.android.callback.UploadCallback
+import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObjects
 
-class FindEmViewModel : ViewModel() {
+class FindEmViewModel(application: Application) : AndroidViewModel(application) {
 
     // --- VARIÁVEIS DE ESTADO DA APLICAÇÃO ---
-    private val _pets = getMockPets().toMutableStateList()
-
-    val pets: List<Pet>
-        get() = _pets.toList()
-
+    var userLocation by mutableStateOf<LatLng?>(null)
+    private val db = FirebaseFirestore.getInstance()
+    private val _pets = mutableStateListOf<Pet>()
+    val pets: List<Pet> get() = _pets
     var selectedTab = mutableStateOf(0)
     var filtroCachorros = mutableStateOf(false)
     var filtroGatos =  mutableStateOf(false)
     var filtroAves =  mutableStateOf(false)
     var filtroOutros =  mutableStateOf(false)
-
-
     var mapFiltroCachorros = mutableStateOf(false)
     var mapFiltroGatos = mutableStateOf(false)
     var mapFiltroAves = mutableStateOf(false)
     var mapFiltroOutros = mutableStateOf(false)
-
-    val notificacoes = listOf(
-        Notificacao(1, "Cachorro perdido a 1km", "1km"),
-        Notificacao(2, "Gato perdido a 2km", "2km"),
-        Notificacao(3, "Ave perdida a 3km", "3km")
-    )
-
     var currentUser by mutableStateOf<FirebaseUser?>(null)
         private set
-
     var userName by mutableStateOf<String?>("Visitante")
         private set
 
-    private val authStateListener = FirebaseAuth.AuthStateListener { auth ->
-        val user = auth.currentUser
-        currentUser = user
-        userName = user?.displayName?.takeIf { it.isNotBlank() }
-            ?: user?.email?.substringBefore("@")
-                    ?: "Visitante"
+    private fun configurarAuth() {
+        FirebaseAuth.getInstance().addAuthStateListener { auth ->
+            val user = auth.currentUser
+            currentUser = user
+            userName = user?.displayName?.takeIf { it.isNotBlank() }
+                ?: user?.email?.substringBefore("@") ?: "Visitante"
+        }
     }
 
-    init {
-        FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
+    fun updateUserLocation(lat: Double, lng: Double) {
+        userLocation = LatLng(lat, lng)
+    }
+
+    private fun calcularDistancia(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
+        val results = FloatArray(1)
+        Location.distanceBetween(lat1, lon1, lat2, lon2, results)
+        return results[0]
+    }
+
+    val notificacoesProximas by derivedStateOf {
+        val localUsuario = userLocation ?: return@derivedStateOf emptyList()
+
+        _pets.mapNotNull { pet ->
+
+            if (pet.latitude == 0.0 || pet.longitude == 0.0) return@mapNotNull null
+
+            val distanciaMetros = calcularDistancia(
+                localUsuario.latitude, localUsuario.longitude,
+                pet.latitude, pet.longitude
+            )
+
+            if (distanciaMetros <= 5000) {
+                val distanciaKm = "%.1f km".format(distanciaMetros / 1000f)
+                Notificacao(
+                    id = pet.id.hashCode(),
+                    mensagem = "${pet.especie.capitalize()} ${pet.categoria} próximo: ${pet.nome}",
+                    distancia = distanciaKm
+                )
+            } else {
+                null
+            }
+        }.sortedBy { it.distancia }
+    }
+
+    private fun fetchPetsDoFirestore() {
+        db.collection("pets")
+            .orderBy("dataCriacao", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .addSnapshotListener { value, error ->
+                if (error != null) {
+                    Log.e("Firestore", "Erro ao buscar pets: ", error)
+                    return@addSnapshotListener
+                }
+                if (value != null) {
+                    val lista = value.toObjects<Pet>()
+                    _pets.clear()
+                    _pets.addAll(lista)
+                }
+            }
     }
 
     fun logout() {
         FirebaseAuth.getInstance().signOut()
     }
 
-
     // --- VARIÁVEIS PARA LOCALIDADES DO IBGE (AGORA USADAS) ---
     val estadosIBGE = mutableStateOf<List<Estado>>(emptyList())
     val municipiosIBGE = mutableStateOf<List<Municipio>>(emptyList())
-
     // Instância do serviço Retrofit para IBGE
     private val ibgeService: IBGEService = RetrofitClient.ibgeService
 
     init {
         // Inicia a busca pelos estados ao criar o ViewModel
+        configurarAuth()
         fetchEstados()
+        fetchPetsDoFirestore()
     }
 
     // --- FUNÇÕES IBGE (Busca de Estados e Municípios) ---
@@ -105,93 +153,102 @@ class FindEmViewModel : ViewModel() {
         }
     }
 
-    // --- FUNÇÃO DE GEOCODING (CORRIGIDA) ---
+    fun salvarPetComFoto(uriImagem: Uri?, novoPet: Pet) {
+        if (uriImagem != null) {
+            Log.d("Cloudinary", "Iniciando upload...")
+            // Upload
+            MediaManager.get().upload(uriImagem)
+                .unsigned("findem_preset")
+                .option("resource_type", "image")
+                .callback(object : UploadCallback {
+                    override fun onStart(requestId: String) {}
+                    override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {}
 
-    fun addPetComGeocoding(context: Context, novoPetSemCoordenadas: Pet) {
+                    override fun onSuccess(requestId: String, resultData: Map<*, *>) {
+                        val urlDaImagem = resultData["secure_url"] as String
+                        Log.d("Cloudinary", "Sucesso: $urlDaImagem")
 
-        val enderecoCompleto = novoPetSemCoordenadas.endereco // Usando o endereço formatado
+                        val petComUrl = novoPet.copy(imageUrl = urlDaImagem)
+                        addPetComGeocodingESalvar(petComUrl)
+                    }
+
+                    override fun onError(requestId: String, error: ErrorInfo) {
+                        Log.e("Cloudinary", "Erro: ${error.description}")
+                        addPetComGeocodingESalvar(novoPet)
+                    }
+
+                    override fun onReschedule(requestId: String, error: ErrorInfo) {}
+                })
+                .dispatch()
+        } else {
+            addPetComGeocodingESalvar(novoPet)
+        }
+    }
+
+
+    private fun addPetComGeocodingESalvar(pet: Pet) {
+        val context = getApplication<Application>().applicationContext
+        val enderecoCompleto = pet.endereco
 
         if (enderecoCompleto.isBlank()) {
-            salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
+            salvarNoFirestore(pet, 0.0, 0.0)
             return
         }
 
         viewModelScope.launch(Dispatchers.IO) {
             val geocoder = Geocoder(context, Locale.getDefault())
-
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    // Novo método assíncrono para Tiramisu+
                     geocoder.getFromLocationName(enderecoCompleto, 1) { addresses ->
                         if (addresses.isNotEmpty()) {
-                            val lat = addresses[0].latitude
-                            val lon = addresses[0].longitude
-                            salvarPetFinal(novoPetSemCoordenadas, lat, lon)
+                            salvarNoFirestore(pet, addresses[0].latitude, addresses[0].longitude)
                         } else {
-                            salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
+                            salvarNoFirestore(pet, 0.0, 0.0)
                         }
                     }
                 } else {
-                    // Método síncrono para versões antigas
+                    @Suppress("DEPRECATION")
                     val addresses = geocoder.getFromLocationName(enderecoCompleto, 1)
                     if (!addresses.isNullOrEmpty()) {
-                        val lat = addresses[0].latitude
-                        val lon = addresses[0].longitude
-                        salvarPetFinal(novoPetSemCoordenadas, lat, lon)
+                        salvarNoFirestore(pet, addresses[0].latitude, addresses[0].longitude)
                     } else {
-                        salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
+                        salvarNoFirestore(pet, 0.0, 0.0)
                     }
                 }
             } catch (e: IOException) {
-                Log.e("Geocoding", "Erro de Geocoding para $enderecoCompleto: ${e.message}")
-                salvarPetFinal(novoPetSemCoordenadas, 0.0, 0.0)
+                Log.e("Geocoding", "Erro: ${e.message}")
+                salvarNoFirestore(pet, 0.0, 0.0)
             }
         }
     }
 
-    private fun salvarPetFinal(pet: Pet, lat: Double, lon: Double) {
-        val petCompleto = pet.copy(
+    private fun salvarNoFirestore(pet: Pet, lat: Double, lon: Double) {
+        val novoId = db.collection("pets").document().id
+        val uidUsuario = currentUser?.uid ?: ""
+
+        val petFinal = pet.copy(
+            id = novoId,
             latitude = lat,
-            longitude = lon
+            longitude = lon,
+            userId = uidUsuario,
+            dataCriacao = System.currentTimeMillis()
         )
 
-        viewModelScope.launch(Dispatchers.Main) {
-            _pets.add(petCompleto)
-        }
-    }
-
-    // ... (getMockPets, addPet, removePet, getListaFiltrada continuam os mesmos)
-    private fun getMockPets() =
-        listOf(
-            Pet(1, "Ludovico", "Pelo curto BR", "Rua A, PE", "****",
-                android.R.drawable.ic_menu_gallery, "cachorro", "perdidos", "Boa Viagem", -8.1111, -34.8910),
-            Pet(2, "Sarapatel", "Europeu", "Rua B, PE", "****",
-                android.R.drawable.ic_menu_gallery, "cachorro", "adocao", "Pina", -8.0930, -34.8800),
-            Pet(3, "Snowbell", "Persa", "Rua C, PE", "****",
-                android.R.drawable.ic_menu_gallery, "gato", "perdidos", "Derby", -8.0570, -34.9000),
-            Pet(4, "Luciano", "Doméstico", "Rua D, CE", "****",
-                android.R.drawable.ic_menu_gallery, "ave", "adocao", "Recife Antigo", -8.0630, -34.8710),
-            Pet(5, "Leãonardo", "Curto", "Rua E, BA", "****",
-                android.R.drawable.ic_menu_gallery, "gato", "perdidos", "Olinda", -8.0090, -34.8550),
-            Pet(6, "Diana", "Bombaim", "Rua ***", "****",
-                android.R.drawable.ic_menu_gallery, "outro", "perdidos", "Minha rua"),
-            Pet(7, "Thor", "SRD", "Rua X", "****",
-                android.R.drawable.ic_menu_gallery, "cachorro", "encontrados", "Minha rua")
-        )
-
-    fun addPet(pet: Pet){
-        _pets.add(pet)
-    }
-
-    fun removePet(pet: Pet){
-        _pets.remove(pet)
+        db.collection("pets").document(novoId).set(petFinal)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Pet salvo com sucesso! ID: $novoId")
+                // Não precisa adicionar manual no _pets, o SnapshotListener faz isso
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Erro ao salvar: ${e.message}")
+            }
     }
 
     fun getListaFiltrada(): List<Pet>{
         return _pets.filter { pet ->
             val categoriaOk = when (selectedTab.value){
                 0 -> pet.categoria == "perdidos"
-                1 -> pet.categoria == "adocao"
+                1 -> pet.categoria == "adocao" || pet.categoria == "adoção"
                 else -> pet.categoria == "encontrados"
             }
             if(!categoriaOk) return@filter false
