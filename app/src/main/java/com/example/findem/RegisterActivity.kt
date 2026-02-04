@@ -1,6 +1,7 @@
 package com.example.findem
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -44,6 +45,7 @@ fun RegisterPage(modifier: Modifier = Modifier) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVerify by rememberSaveable { mutableStateOf("") }
+    var whatsapp by rememberSaveable { mutableStateOf("") }
 
     //val context = LocalContext.current
     val activity = LocalActivity.current as Activity
@@ -90,6 +92,15 @@ fun RegisterPage(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.size(12.dp))
 
         OutlinedTextField(
+            value = whatsapp,
+            label = { Text(text = "Seu WhatsApp (com DDD)") },
+            modifier = Modifier.fillMaxWidth(fraction = 0.9F),
+            onValueChange = { whatsapp = it }
+        )
+
+        Spacer(modifier = Modifier.size(12.dp))
+
+        OutlinedTextField(
             value = password,
             label = { Text(text = "Digite sua senha") },
             modifier = Modifier.fillMaxWidth(fraction = 0.9F),
@@ -112,28 +123,6 @@ fun RegisterPage(modifier: Modifier = Modifier) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             Button(
                 onClick = {
-                    Firebase.auth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener(activity) { task ->
-                            if (task.isSuccessful) {
-                                Toast.makeText(
-                                    activity,
-                                    "Registro OK!", Toast.LENGTH_LONG
-                                ).show()
-                            } else {
-                                Toast.makeText(
-                                    activity,
-                                    "Registro FALHOU!", Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
-                },
-                enabled = email.isNotEmpty() && nameUser.isNotEmpty() && password.isNotEmpty() && passwordVerify.isNotEmpty()
-            ) {
-                Text("Registrar")
-            }
-
-            Button(
-                onClick = {
                     email = ""
                     password = ""
                     nameUser = ""
@@ -142,6 +131,48 @@ fun RegisterPage(modifier: Modifier = Modifier) {
                 enabled = email.isNotEmpty() || password.isNotEmpty() || nameUser.isNotEmpty() || passwordVerify.isNotEmpty()
             ) {
                 Text("Limpar")
+            }
+
+            Button(
+                onClick = {
+                    val auth = com.google.firebase.Firebase.auth
+                    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
+                    auth.createUserWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(activity) { task ->
+                            if (task.isSuccessful) {
+                                val userId = task.result?.user?.uid
+
+                                val dadosUsuario = hashMapOf(
+                                    "uid" to userId,
+                                    "nome" to nameUser,
+                                    "whatsapp" to whatsapp,
+                                    "email" to email
+                                )
+                                userId?.let { id ->
+                                    db.collection("usuarios").document(id)
+                                        .set(dadosUsuario)
+                                        .addOnSuccessListener {
+                                            Toast.makeText(activity, "Bem-vindo, $nameUser!", Toast.LENGTH_LONG).show()
+                                            val intent = Intent(activity, MainActivity::class.java)
+                                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                            activity.startActivity(intent)
+                                        }
+                                        .addOnFailureListener {
+                                            Toast.makeText(activity, "Erro ao salvar perfil.", Toast.LENGTH_SHORT).show()
+                                        }
+                                }
+                            } else {
+                                val erro = task.exception?.message ?: "Falha desconhecida"
+                                Toast.makeText(activity, "Erro: $erro", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                },
+                enabled = email.isNotEmpty() && nameUser.isNotEmpty() &&
+                        password.isNotEmpty() && passwordVerify == password &&
+                        whatsapp.isNotEmpty()
+            ) {
+                Text("Registrar")
             }
         }
     }

@@ -9,6 +9,9 @@ import retrofit2.http.Path
 
 data class Pet(
     val id: String = "",
+    val ownerEmail: String = "",
+    val ownerContato: String = "",
+    val userId: String = "",
     val nome: String = "",
     val raca: String = "",
     val endereco: String = "",
@@ -19,8 +22,6 @@ data class Pet(
     val descricaoLocal: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
-
-    val userId: String = "",
     val dataCriacao: Long = 0L
 )
 

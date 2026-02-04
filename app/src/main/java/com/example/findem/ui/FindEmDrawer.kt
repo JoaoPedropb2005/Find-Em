@@ -1,13 +1,9 @@
 package com.example.findem.ui
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -17,8 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -32,7 +26,8 @@ fun FindEmDrawerContent(
     isUserLoggedIn: Boolean,
     onCloseDrawer: () -> Unit,
     onLoginClick: () -> Unit,
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    onMyPostsClick: () -> Unit // NOVO: Callback para navegação
 ) {
     ModalDrawerSheet(
         modifier = Modifier.width(300.dp),
@@ -61,7 +56,7 @@ fun FindEmDrawerContent(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Sair (Logout)",
-                            color = Color(0xFFBBDEFB), // Azul claro
+                            color = Color(0xFFBBDEFB),
                             fontSize = 13.sp,
                             textDecoration = TextDecoration.Underline,
                             modifier = Modifier.clickable { onLogoutClick() }
@@ -75,7 +70,7 @@ fun FindEmDrawerContent(
                         )
                         Text(
                             text = "Logar / Criar conta",
-                            color = Color(0xFF1565C0),
+                            color = Color(0xFFBBDEFB),
                             fontSize = 12.sp,
                             textDecoration = TextDecoration.Underline,
                             modifier = Modifier.clickable { onLoginClick() }
@@ -104,11 +99,17 @@ fun FindEmDrawerContent(
             // --- ITENS DO MENU ---
             DrawerMenuItem(Icons.Default.Star, "Favoritados") { onCloseDrawer() }
             Spacer(modifier = Modifier.height(16.dp))
-            DrawerMenuItem(Icons.Default.List, "Minhas postagens") { onCloseDrawer() }
+
+            // CORREÇÃO: Chama os dois métodos - fecha o drawer e executa a ação de navegar
+            DrawerMenuItem(Icons.Default.List, "Minhas postagens") {
+                onCloseDrawer()
+                onMyPostsClick()
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
             DrawerMenuItem(Icons.Default.Notifications, "Notificações") { onCloseDrawer() }
 
-            Spacer(modifier = Modifier.height(545.dp))
+            Spacer(modifier = Modifier.weight(1f)) // Usa weight para empurrar o rodapé para baixo
 
             Text(
                 "Created by Julia Soares And João Pedro\n2025",
@@ -142,4 +143,3 @@ fun DrawerMenuItem(icon: ImageVector, title: String, onClick: () -> Unit) {
         Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
     }
 }
-

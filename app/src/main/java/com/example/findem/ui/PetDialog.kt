@@ -7,116 +7,98 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButtonDefaults.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.example.findem.model.Pet
-import com.example.findem.model.FindEmViewModel // Importar ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel // Para obter o ViewModel
+import com.example.findem.model.FindEmViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.findem.model.Estado // Importar modelo Estado
-import com.example.findem.model.Municipio // Importar modelo Municipio
+import com.example.findem.model.Estado
+import com.example.findem.model.Municipio
 import java.io.File
 
-
-// Necessário para usar ExposedDropdownMenuBox e outros componentes experimentais
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetDialog(
+    petParaEditar: Pet? = null,
     onDismiss: () -> Unit,
     onConfirm: (Pet) -> Unit,
-    viewModel: FindEmViewModel = viewModel() // Injetar ViewModel
+    viewModel: FindEmViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    var nome by remember { mutableStateOf("") }
-    var raca by remember { mutableStateOf("") }
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val userEmail = viewModel.currentUser?.email ?: "anonimo@findem.com"
 
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    val adaptiveImageHeight = if (screenHeight < 640.dp) 120.dp else 160.dp
+
+    var nome by remember { mutableStateOf(petParaEditar?.nome ?: "") }
+    var raca by remember { mutableStateOf(petParaEditar?.raca ?: "") }
+    var contato by remember { mutableStateOf(petParaEditar?.ownerContato ?: "") }
+    var especie by remember { mutableStateOf(petParaEditar?.especie ?: "") }
+    var categoria by remember { mutableStateOf(petParaEditar?.categoria ?: "") }
+    var descricaoLocal by remember { mutableStateOf(petParaEditar?.descricaoLocal ?: "") }
+
+    var selectedImageUri by remember {
+        mutableStateOf<Uri?>(if (petParaEditar?.imageUrl?.isNotEmpty() == true) Uri.parse(petParaEditar.imageUrl) else null)
+    }
+
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
     var showImageSourceOption by remember { mutableStateOf(false) }
 
-    // 1. Launcher da GALERIA
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> if (uri != null) selectedImageUri = uri }
     )
-
-    // 2. Launcher da CÂMERA
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(),
-        onResult = { success ->
-            if (success && tempCameraUri != null) {
-                selectedImageUri = tempCameraUri
-            }
-        }
+        onResult = { success -> if (success && tempCameraUri != null) selectedImageUri = tempCameraUri }
     )
 
-    // VARIÁVEIS PARA DROPDOWNS FIXOS
-    var especie by remember { mutableStateOf("") }
-    var isEspecieExpanded by remember { mutableStateOf(false) }
-    val especiesOptions = listOf("Cachorro", "Gato", "Pássaro", "Roedor", "Outros")
-
-    var categoria by remember { mutableStateOf("") }
-    var isCategoriaExpanded by remember { mutableStateOf(false) }
+    val especiesOptions = listOf("Cachorro", "Gato", "Ave", "Outros")
     val categoriasOptions = listOf("Perdidos", "Adoção", "Encontrados")
-
-    // VARIÁVEIS PARA DROPDOWNS DINÂMICOS (IBGE)
-    var estadoSelecionado by remember { mutableStateOf<Estado?>(null) }
-    var municipioSelecionado by remember { mutableStateOf<Municipio?>(null) }
-
+    var isEspecieExpanded by remember { mutableStateOf(false) }
+    var isCategoriaExpanded by remember { mutableStateOf(false) }
     var isEstadoExpanded by remember { mutableStateOf(false) }
     var isMunicipioExpanded by remember { mutableStateOf(false) }
 
-    // Obter dados dinâmicos do ViewModel (usando .value)
     val estados = viewModel.estadosIBGE.value
     val municipios = viewModel.municipiosIBGE.value
-
-    var descricaoLocal by remember { mutableStateOf("") } // Rua/Referência
-
-    val imagemPadraoRes = android.R.drawable.ic_menu_gallery
+    var estadoSelecionado by remember { mutableStateOf<Estado?>(null) }
+    var municipioSelecionado by remember { mutableStateOf<Municipio?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova Postagem") },
+        title = { Text(if (petParaEditar == null) "Nova Postagem" else "Editar Postagem") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
+                        .height(adaptiveImageHeight)
                         .clip(RoundedCornerShape(12.dp))
                         .background(color = Color.LightGray)
                         .clickable { showImageSourceOption = true },
@@ -125,23 +107,22 @@ fun PetDialog(
                     if (selectedImageUri != null) {
                         AsyncImage(
                             model = selectedImageUri,
-                            contentDescription = "Foto selecionada",
+                            contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = Color.Gray)
-                            Text("Toque para adicionar foto", color = Color.Gray)
+                            Text("Adicionar foto", color = Color.Gray, fontSize = 12.sp)
                         }
                     }
                 }
 
-                // Campos de texto simples
-                OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome") }, singleLine = true)
-                OutlinedTextField(value = raca, onValueChange = { raca = it }, label = { Text("Raça") }, singleLine = true)
+                OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = raca, onValueChange = { raca = it }, label = { Text("Raça") }, modifier = Modifier.fillMaxWidth())
 
-                // 1. Dropdown para Espécie (Fixo)
+                // CORREÇÃO: Usando nomes de parâmetros para evitar erros de assinatura
                 DropdownMenuField(
                     label = "Espécie",
                     selectedValue = especie,
@@ -150,8 +131,6 @@ fun PetDialog(
                     isExpanded = isEspecieExpanded,
                     onExpandedChange = { isEspecieExpanded = it }
                 )
-
-                // 2. Dropdown para Categoria (Fixo)
                 DropdownMenuField(
                     label = "Categoria",
                     selectedValue = categoria,
@@ -161,36 +140,31 @@ fun PetDialog(
                     onExpandedChange = { isCategoriaExpanded = it }
                 )
 
-                // 3. Dropdown para Estado do Brasil (UF) - DINÂMICO
                 DropdownMenuField(
                     label = if (estados.isEmpty()) "Carregando Estados..." else "Estado (UF)",
                     selectedValue = estadoSelecionado?.sigla ?: "",
                     options = estados.map { it.sigla },
                     onSelected = { sigla ->
                         estadoSelecionado = estados.find { it.sigla == sigla }
-                        municipioSelecionado = null // Resetar município ao trocar estado
-                        viewModel.fetchMunicipios(sigla) // Carrega cidades
+                        municipioSelecionado = null
+                        viewModel.fetchMunicipios(sigla)
                     },
                     isExpanded = isEstadoExpanded,
-                    onExpandedChange = { isEstadoExpanded = it },
-                    enabled = estados.isNotEmpty()
+                    onExpandedChange = { isEstadoExpanded = it }
                 )
 
-                // 4. Dropdown para Município (Cidade) - DINÂMICO
                 DropdownMenuField(
                     label = if (estadoSelecionado == null) "Selecione o Estado" else if (municipios.isEmpty()) "Carregando Cidades..." else "Cidade",
                     selectedValue = municipioSelecionado?.nome ?: "",
                     options = municipios.map { it.nome },
-                    onSelected = { nome ->
-                        municipioSelecionado = municipios.find { it.nome == nome }
+                    onSelected = { nomeMun ->
+                        municipioSelecionado = municipios.find { it.nome == nomeMun }
                     },
                     isExpanded = isMunicipioExpanded,
-                    onExpandedChange = { isMunicipioExpanded = it },
-                    enabled = municipios.isNotEmpty()
+                    onExpandedChange = { isMunicipioExpanded = it }
                 )
 
-                // Campos de texto simples: Rua / Ponto de Referência
-                OutlinedTextField(value = descricaoLocal, onValueChange = { descricaoLocal = it }, label = { Text("Rua / Ponto de Referência") }, singleLine = true)
+                OutlinedTextField(value = descricaoLocal, onValueChange = { descricaoLocal = it }, label = { Text("Rua / Referência") }, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
@@ -198,28 +172,25 @@ fun PetDialog(
                 onClick = {
                     val enderecoCompleto = if (municipioSelecionado != null && estadoSelecionado != null) {
                         "${descricaoLocal.trim()}, ${municipioSelecionado!!.nome}, ${estadoSelecionado!!.sigla}"
-                    } else {
-                        // Se não selecionou cidade/estado, usa a descrição local como fallback
-                        descricaoLocal.trim()
-                    }
+                    } else { descricaoLocal.trim() }
 
-                    val imagemString = selectedImageUri?.toString() ?: ""
+                    val idFinal = petParaEditar?.id ?: System.currentTimeMillis().toString()
 
-                    if (nome.isNotBlank() && especie.isNotBlank() && categoria.isNotBlank() && enderecoCompleto.isNotBlank()) {
-                        val novoPet = Pet(
-                            id = "",
+                    if (nome.isNotBlank() && especie.isNotBlank() && categoria.isNotBlank()) {
+                        val petFinal = (petParaEditar ?: Pet()).copy(
+                            id = idFinal,
+                            ownerEmail = userEmail,
+                            ownerContato = viewModel.userWhatsapp,
                             nome = nome,
                             raca = raca,
-                            endereco = enderecoCompleto, // Endereço formatado para Geocoding
-                            classificacao = "",
-                            imageUrl = imagemString,
+                            endereco = enderecoCompleto,
+                            imageUrl = selectedImageUri?.toString() ?: "",
                             especie = especie.trim().lowercase(),
                             categoria = categoria.trim().lowercase(),
-                            descricaoLocal = descricaoLocal, // Mantém a rua/referência aqui
-                            latitude = 0.0,
-                            longitude = 0.0
+                            descricaoLocal = descricaoLocal,
+                            userId = viewModel.currentUser?.uid ?: ""
                         )
-                        onConfirm(novoPet)
+                        onConfirm(petFinal)
                     }
                 }
             ) {
@@ -227,9 +198,7 @@ fun PetDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
         }
     )
 
@@ -250,7 +219,7 @@ fun PetDialog(
                         }
                     )
                     ListItem(
-                        headlineContent = { Text("Escolher da Galeria") },
+                        headlineContent = { Text("Galeria") },
                         leadingContent = { Icon(Icons.Default.PhotoLibrary, null) },
                         modifier = Modifier.clickable {
                             showImageSourceOption = false
@@ -264,12 +233,6 @@ fun PetDialog(
         )
     }
 }
-
-
-// =================================================================
-// COMPONENTE AUXILIAR DROPDOWN MENU (Habilitado para o estado)
-// =================================================================
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownMenuField(
@@ -278,37 +241,31 @@ fun DropdownMenuField(
     options: List<String>,
     onSelected: (String) -> Unit,
     isExpanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    enabled: Boolean = true
+    onExpandedChange: (Boolean) -> Unit
 ) {
     ExposedDropdownMenuBox(
         expanded = isExpanded,
-        onExpandedChange = { if(enabled) onExpandedChange(it) },
-        modifier = Modifier.fillMaxWidth()
+        onExpandedChange = onExpandedChange
     ) {
         OutlinedTextField(
             value = selectedValue,
-            onValueChange = { /* Não permite digitação direta */ },
-            label = { Text(label) },
+            onValueChange = {},
             readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded && enabled) },
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth(),
-            enabled = enabled
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
+            modifier = Modifier.menuAnchor().fillMaxWidth()
         )
         ExposedDropdownMenu(
-            expanded = isExpanded && enabled,
+            expanded = isExpanded,
             onDismissRequest = { onExpandedChange(false) }
         ) {
-            options.forEach { selectionOption ->
+            options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(selectionOption) },
+                    text = { Text(option) },
                     onClick = {
-                        onSelected(selectionOption)
+                        onSelected(option)
                         onExpandedChange(false)
-                    },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    }
                 )
             }
         }
@@ -316,8 +273,7 @@ fun DropdownMenuField(
 }
 
 fun criarUriParaCamera(context: Context): Uri {
-    val directory = File(context.cacheDir, "images")
-    directory.mkdirs()
+    val directory = File(context.cacheDir, "images").apply { mkdirs() }
     val file = File.createTempFile("selected_image_", ".jpg", directory)
     return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
 }
