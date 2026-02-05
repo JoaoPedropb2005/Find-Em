@@ -22,7 +22,7 @@ import com.example.findem.ui.theme.PetCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyPostScreen(viewModel: FindEmViewModel, onBack: () -> Unit) {
+fun MyPostScreen(viewModel: FindEmViewModel, onBack: () -> Unit, onPetClick: () -> Unit) {
     val currentUserId = viewModel.currentUser?.uid
 
     var petParaEditarSelecionado by remember { mutableStateOf<Pet?>(null) }
@@ -66,8 +66,8 @@ fun MyPostScreen(viewModel: FindEmViewModel, onBack: () -> Unit) {
                 items(minhasPostagens) { pet ->
                     Box {
                         PetCard(pet = pet, onClick = {
-                            petParaEditarSelecionado = pet
-                            mostrarDialogo = true
+                            viewModel.petSelecionadoParaDetalhes = pet
+                            onPetClick()
                         })
 
                         IconButton(

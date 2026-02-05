@@ -27,8 +27,8 @@ data class Pet(
 
 data class Notificacao(
     val id: Int,
+    val petId: String,
     val mensagem: String,
-    val distancia: String
 )
 
 // --- NOVOS MODELOS PARA O IBGE ---

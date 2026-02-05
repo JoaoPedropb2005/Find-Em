@@ -42,6 +42,23 @@ class FindEmViewModel(application: Application) : AndroidViewModel(application) 
         private set
     var userWhatsapp by mutableStateOf("")
 
+    val petsFiltradosMap by derivedStateOf {
+        val semFiltro = !filtroCachorros.value && !filtroGatos.value && !filtroAves.value && !filtroOutros.value
+
+        if (semFiltro) {
+            _pets // Retorna tudo se nada estiver marcado
+        } else {
+            _pets.filter { pet ->
+                (filtroCachorros.value && pet.especie == "cachorro") ||
+                        (filtroGatos.value && pet.especie == "gato") ||
+                        (filtroAves.value && pet.especie == "ave") ||
+                        (filtroOutros.value && pet.especie == "outro")
+            }
+        }
+    }
+
+    var petSelecionadoParaDetalhes by mutableStateOf<Pet?>(null)
+
     // --- IBGE ---
     val estadosIBGE = mutableStateOf<List<Estado>>(emptyList())
     val municipiosIBGE = mutableStateOf<List<Municipio>>(emptyList())
@@ -68,7 +85,7 @@ class FindEmViewModel(application: Application) : AndroidViewModel(application) 
     val notificacoesProximas by derivedStateOf {
         val localUsuario = userLocation ?: return@derivedStateOf emptyList<Notificacao>()
 
-        _pets.mapNotNull { pet ->
+        petsFiltradosMap.mapNotNull { pet ->
             if (pet.latitude == 0.0 || pet.longitude == 0.0) return@mapNotNull null
 
             val distanciaMetros = calcularDistancia(
@@ -76,16 +93,24 @@ class FindEmViewModel(application: Application) : AndroidViewModel(application) 
                 pet.latitude, pet.longitude
             )
 
-            // Define raio de 5km para notificações
-            if (distanciaMetros <= 5000) {
-                val distanciaKm = "%.1f km".format(distanciaMetros / 1000f)
+            if (distanciaMetros <= 1000) {
+                val distanciaTexto = if (distanciaMetros < 1000) {
+                    "${distanciaMetros.toInt()}m"
+                } else {
+                    "%.1f km".format(distanciaMetros / 1000f)
+                }
+
                 Notificacao(
                     id = pet.id.hashCode(),
-                    mensagem = "${pet.especie.replaceFirstChar { it.uppercase() }} ${pet.categoria} próximo: ${pet.nome}",
-                    distancia = distanciaKm
+                    petId = pet.id,
+                    mensagem = "${pet.especie.capitalize()} ${pet.categoria} a $distanciaTexto",
                 )
             } else null
-        }.sortedBy { it.distancia }
+        }.sortedBy { it.id }
+    }
+
+    fun getPetById(id: String): Pet? {
+        return _pets.find { it.id == id }
     }
 
     // --- RESTANTE DA LÓGICA (AUTH, FIRESTORE, CLOUDINARY) ---
@@ -169,6 +194,19 @@ class FindEmViewModel(application: Application) : AndroidViewModel(application) 
             dataCriacao = if (pet.dataCriacao == 0L) System.currentTimeMillis() else pet.dataCriacao
         )
         db.collection("pets").document(docId).set(petFinal)
+    }
+
+    fun marcarComoEncontrado(pet: Pet, onSuccess: () -> Unit) {
+        if (pet.id.isNotBlank()) {
+            db.collection("pets").document(pet.id)
+                .update("categoria", "encontrados")
+                .addOnSuccessListener {
+                    onSuccess()
+                }
+                .addOnFailureListener {
+                    Log.e("FindEm", "Erro ao atualizar: ${it.message}")
+                }
+        }
     }
 
     fun getListaFiltrada(): List<Pet> {

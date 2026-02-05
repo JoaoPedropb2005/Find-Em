@@ -43,7 +43,8 @@ import com.google.maps.android.compose.*
 @Composable
 fun MapScreen(
     viewModel: FindEmViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onNavigateToDetails: () -> Unit
 ) {
     val context = LocalContext.current
     var isNotificacoesExpanded by remember { mutableStateOf(true) }
@@ -121,18 +122,8 @@ fun MapScreen(
                 properties = properties,
                 uiSettings = uiSettings
             ) {
-                viewModel.pets.forEach { pet ->
-                    // AJUSTADO: Verificação de filtros com nomes do ViewModel
-                    val mostrarCachorro = viewModel.filtroCachorros.value && pet.especie == "cachorro"
-                    val mostrarGato = viewModel.filtroGatos.value && pet.especie == "gato"
-                    val mostrarAve = viewModel.filtroAves.value && pet.especie == "ave"
-                    val mostrarOutro = viewModel.filtroOutros.value && pet.especie == "outro"
-
-                    val nenhumFiltro = !viewModel.filtroCachorros.value && !viewModel.filtroGatos.value &&
-                            !viewModel.filtroAves.value && !viewModel.filtroOutros.value
-
-                    if (pet.latitude != 0.0 && pet.longitude != 0.0 &&
-                        (nenhumFiltro || mostrarCachorro || mostrarGato || mostrarAve || mostrarOutro)) {
+                viewModel.petsFiltradosMap.forEach { pet ->
+                    if (pet.latitude != 0.0 && pet.longitude != 0.0) {
                         Marker(
                             state = MarkerState(position = LatLng(pet.latitude, pet.longitude)),
                             title = pet.nome,
@@ -160,20 +151,29 @@ fun MapScreen(
                     HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
 
                     Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable { isNotificacoesExpanded = !isNotificacoesExpanded }, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                        Text("NOTIFICAÇÕES", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                        Text("ALERTAS (Raio 1km)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
                         Icon(if (isNotificacoesExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp, null, tint = Color.Gray)
                     }
 
                     AnimatedVisibility(visible = isNotificacoesExpanded) {
-                        // AJUSTADO: Nome da variável derivativa no ViewModel
                         if (viewModel.notificacoesProximas.isNotEmpty()) {
                             LazyColumn(modifier = Modifier.heightIn(max = 200.dp), contentPadding = PaddingValues(top = 8.dp)) {
                                 items(viewModel.notificacoesProximas) { notif ->
-                                    NotificacaoItem(notif)
+                                    NotificacaoItem(
+                                        notificacao = notif,
+                                        onClick = {
+                                            // Busca o pet pelo ID salvo na notificação
+                                            val pet = viewModel.getPetById(notif.petId)
+                                            if (pet != null) {
+                                                viewModel.petSelecionadoParaDetalhes = pet
+                                                onNavigateToDetails()
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         } else {
-                            Text("Nenhum alerta próximo.", modifier = Modifier.padding(16.dp).fillMaxWidth(), textAlign = TextAlign.Center, color = Color.Gray, fontSize = 12.sp)
+                            Text("Nenhum alerta em 1km.", modifier = Modifier.padding(16.dp).fillMaxWidth(), textAlign = TextAlign.Center, color = Color.Gray, fontSize = 12.sp)
                         }
                     }
                 }
@@ -191,13 +191,21 @@ fun FilterCheckbox(label: String, state: MutableState<Boolean>) {
 }
 
 @Composable
-fun NotificacaoItem(notificacao: Notificacao) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.Top) {
-        Icon(Icons.Default.ErrorOutline, null, tint = Color.Black, modifier = Modifier.size(20.dp).padding(top = 2.dp))
+fun NotificacaoItem(notificacao: Notificacao, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.ErrorOutline, null, tint = Color.Black, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(12.dp))
-        Column {
-            Text(text = notificacao.mensagem, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
-            Text(text = notificacao.distancia, fontSize = 11.sp, color = Color.Gray)
-        }
+        Text(
+            text = notificacao.mensagem,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.DarkGray
+        )
     }
 }

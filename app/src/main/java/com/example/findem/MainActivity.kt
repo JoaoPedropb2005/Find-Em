@@ -24,6 +24,8 @@ import com.example.findem.ui.theme.FindEmScreen
 import com.example.findem.ui.FindEmRoute
 import com.example.findem.ui.CardInform
 import com.example.findem.ui.MyPostScreen
+import com.example.findem.ui.PetDetailsScreen
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,29 +71,50 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 navController = navController,
                                 onMapClick = { navController.navigate(FindEmRoute.MAP) },
-                                onPetClick = { pet ->
-                                    navController.navigate("detalhes/${pet.id}")
+                                onPetClick = {
+                                        pet ->
+                                    viewModel.petSelecionadoParaDetalhes = pet
+                                    navController.navigate("card_inform")
                                 }
                             )
                         }
 
                         composable(FindEmRoute.MAP) {
-                            MapScreen(viewModel = viewModel, onBackClick = { navController.popBackStack() })
+                            MapScreen(
+                                viewModel = viewModel,
+                                onBackClick = { navController.popBackStack() },
+                                onNavigateToDetails = {
+                                    navController.navigate("card_inform")
+                                }
+                            )
                         }
 
                         // ROTA DE DETALHES
-                        composable("detalhes/{petId}") { backStackEntry ->
-                            val petId = backStackEntry.arguments?.getString("petId")
-                            val pet = viewModel.pets.find { it.id == petId }
-                            pet?.let {
-                                CardInform(pet = it, onBack = { navController.popBackStack() })
-                            }
-                        }
+
                         composable("minhas_postagens") {
                             MyPostScreen(
                                 viewModel = viewModel,
+                                onBack = { navController.popBackStack() },
+                                onPetClick = { navController.navigate("pet_details") } // Vai para detalhes
+                            )
+                        }
+
+                        composable("pet_details") {
+                            PetDetailsScreen(
+                                viewModel = viewModel,
                                 onBack = { navController.popBackStack() }
                             )
+                        }
+
+                        composable("card_inform") {
+                            val pet = viewModel.petSelecionadoParaDetalhes
+                            if (pet != null) {
+                                CardInform(
+                                    pet = pet,
+                                    viewModel = viewModel, // Passa o VM para checar login no botão
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
                         }
                     }
                 }

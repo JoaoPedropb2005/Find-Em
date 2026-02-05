@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -57,6 +58,15 @@ fun PetDialog(
     var categoria by remember { mutableStateOf(petParaEditar?.categoria ?: "") }
     var descricaoLocal by remember { mutableStateOf(petParaEditar?.descricaoLocal ?: "") }
 
+    val dadosAdocao = petParaEditar?.classificacao?.split("|")?.map { it.trim() } ?: emptyList()
+    var sexoAdocao by remember { mutableStateOf(dadosAdocao.find { it == "Macho" || it == "Fêmea" } ?: "Macho") }
+    var porteAdocao by remember { mutableStateOf(dadosAdocao.find { it == "Pequeno" || it == "Médio" || it == "Grande" } ?: "Médio") }
+    var idadeAdocao by remember { mutableStateOf(dadosAdocao.find { it == "Filhote" || it == "Adulto" || it == "Idoso" } ?: "Adulto") }
+
+    var castrado by remember { mutableStateOf(dadosAdocao.contains("Castrado")) }
+    var vacinado by remember { mutableStateOf(dadosAdocao.contains("Vacinado")) }
+    var vermifugado by remember { mutableStateOf(dadosAdocao.contains("Vermifugado")) }
+
     var selectedImageUri by remember {
         mutableStateOf<Uri?>(if (petParaEditar?.imageUrl?.isNotEmpty() == true) Uri.parse(petParaEditar.imageUrl) else null)
     }
@@ -84,6 +94,15 @@ fun PetDialog(
     val municipios = viewModel.municipiosIBGE.value
     var estadoSelecionado by remember { mutableStateOf<Estado?>(null) }
     var municipioSelecionado by remember { mutableStateOf<Municipio?>(null) }
+
+    LaunchedEffect(petParaEditar) {
+        if (petParaEditar != null) {
+            val parts = petParaEditar.endereco.split(",")
+            if (parts.size >= 3) {
+                // Tenta pré-carregar visualmente (a lógica real do IBGE depende do ID, aqui é visual)
+            }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -119,29 +138,76 @@ fun PetDialog(
                     }
                 }
 
-                OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = raca, onValueChange = { raca = it }, label = { Text("Raça") }, modifier = Modifier.fillMaxWidth())
+                DropdownMenuField("Categoria", categoria, categoriasOptions, { categoria = it }, isCategoriaExpanded, { isCategoriaExpanded = it })
 
-                // CORREÇÃO: Usando nomes de parâmetros para evitar erros de assinatura
-                DropdownMenuField(
-                    label = "Espécie",
-                    selectedValue = especie,
-                    options = especiesOptions,
-                    onSelected = { especie = it },
-                    isExpanded = isEspecieExpanded,
-                    onExpandedChange = { isEspecieExpanded = it }
-                )
-                DropdownMenuField(
-                    label = "Categoria",
-                    selectedValue = categoria,
-                    options = categoriasOptions,
-                    onSelected = { categoria = it },
-                    isExpanded = isCategoriaExpanded,
-                    onExpandedChange = { isCategoriaExpanded = it }
-                )
+                OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do Animal") }, modifier = Modifier.fillMaxWidth())
 
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.weight(1f)) {
+                        DropdownMenuField("Espécie", especie, especiesOptions, { especie = it }, isEspecieExpanded, { isEspecieExpanded = it })
+                    }
+                    OutlinedTextField(value = raca, onValueChange = { raca = it }, label = { Text("Raça") }, modifier = Modifier.weight(1f))
+                }
+
+                Divider(Modifier.padding(vertical = 4.dp))
+
+                // --- FORMULÁRIO DINÂMICO ---
+                if (categoria == "Adoção") {
+                    Text("Perfil da Adoção", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Sexo:", modifier = Modifier.width(60.dp), fontWeight = FontWeight.Bold)
+                        listOf("Macho", "Fêmea").forEach { item ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
+                                RadioButton(selected = (sexoAdocao == item), onClick = { sexoAdocao = item })
+                                Text(item)
+                            }
+                        }
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(Modifier.weight(1f)) {
+                            DropdownMenuField("Porte", porteAdocao, listOf("Pequeno", "Médio", "Grande"), { porteAdocao = it }, false, {})
+                        }
+                        Box(Modifier.weight(1f)) {
+                            DropdownMenuField("Idade", idadeAdocao, listOf("Filhote", "Adulto", "Idoso"), { idadeAdocao = it }, false, {})
+                        }
+                    }
+
+                    Column {
+                        Text("Cuidados:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            FilterChip(selected = castrado, onClick = { castrado = !castrado }, label = { Text("Castrado") })
+                            FilterChip(selected = vacinado, onClick = { vacinado = !vacinado }, label = { Text("Vacinado") })
+                            FilterChip(selected = vermifugado, onClick = { vermifugado = !vermifugado }, label = { Text("Vermif.") })
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = descricaoLocal,
+                        onValueChange = { descricaoLocal = it },
+                        label = { Text("História / Sobre o animal") },
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        maxLines = 5
+                    )
+
+                } else {
+                    // --- FORMULÁRIO PERDIDOS ---
+                    Text("Detalhes do Desaparecimento", fontWeight = FontWeight.Bold, color = Color.Red)
+
+                    OutlinedTextField(
+                        value = descricaoLocal,
+                        onValueChange = { descricaoLocal = it },
+                        label = { Text("Ponto de Referência / Rua") },
+                        placeholder = { Text("Ex: Próximo à padaria central") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // --- LOCALIZAÇÃO (IBGE) ---
+                Text("Localização", fontWeight = FontWeight.Bold)
                 DropdownMenuField(
-                    label = if (estados.isEmpty()) "Carregando Estados..." else "Estado (UF)",
+                    label = if (estados.isEmpty()) "Carregando..." else "Estado (UF)",
                     selectedValue = estadoSelecionado?.sigla ?: "",
                     options = estados.map { it.sigla },
                     onSelected = { sigla ->
@@ -154,31 +220,41 @@ fun PetDialog(
                 )
 
                 DropdownMenuField(
-                    label = if (estadoSelecionado == null) "Selecione o Estado" else if (municipios.isEmpty()) "Carregando Cidades..." else "Cidade",
+                    label = "Cidade",
                     selectedValue = municipioSelecionado?.nome ?: "",
                     options = municipios.map { it.nome },
-                    onSelected = { nomeMun ->
-                        municipioSelecionado = municipios.find { it.nome == nomeMun }
-                    },
+                    onSelected = { nomeMun -> municipioSelecionado = municipios.find { it.nome == nomeMun } },
                     isExpanded = isMunicipioExpanded,
                     onExpandedChange = { isMunicipioExpanded = it }
                 )
-
-                OutlinedTextField(value = descricaoLocal, onValueChange = { descricaoLocal = it }, label = { Text("Rua / Referência") }, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    val enderecoCompleto = if (municipioSelecionado != null && estadoSelecionado != null) {
-                        "${descricaoLocal.trim()}, ${municipioSelecionado!!.nome}, ${estadoSelecionado!!.sigla}"
-                    } else { descricaoLocal.trim() }
+                    val enderecoBase = if (municipioSelecionado != null && estadoSelecionado != null) {
+                        "${municipioSelecionado!!.nome}, ${estadoSelecionado!!.sigla}"
+                    } else { "Brasil" } // Fallback
 
-                    val idFinal = petParaEditar?.id ?: System.currentTimeMillis().toString()
+                    val enderecoCompleto = if (categoria == "Perdidos") {
+                        "${descricaoLocal.trim()}, $enderecoBase"
+                    } else {
+                        enderecoBase
+                    }
+
+                    val classificacaoFinal = if (categoria == "Adoção") {
+                        val tags = mutableListOf(sexoAdocao, porteAdocao, idadeAdocao)
+                        if (castrado) tags.add("Castrado")
+                        if (vacinado) tags.add("Vacinado")
+                        if (vermifugado) tags.add("Vermifugado")
+                        tags.joinToString(" | ")
+                    } else {
+                        "Perdido"
+                    }
 
                     if (nome.isNotBlank() && especie.isNotBlank() && categoria.isNotBlank()) {
                         val petFinal = (petParaEditar ?: Pet()).copy(
-                            id = idFinal,
+                            id = petParaEditar?.id ?: "", // ViewModel gera se vazio
                             ownerEmail = userEmail,
                             ownerContato = viewModel.userWhatsapp,
                             nome = nome,
@@ -187,19 +263,16 @@ fun PetDialog(
                             imageUrl = selectedImageUri?.toString() ?: "",
                             especie = especie.trim().lowercase(),
                             categoria = categoria.trim().lowercase(),
-                            descricaoLocal = descricaoLocal,
+                            descricaoLocal = descricaoLocal, // História ou Referência
+                            classificacao = classificacaoFinal, // Metadados da adoção
                             userId = viewModel.currentUser?.uid ?: ""
                         )
                         onConfirm(petFinal)
                     }
                 }
-            ) {
-                Text("Salvar")
-            }
+            ) { Text("Salvar") }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
 
     if (showImageSourceOption) {
@@ -233,6 +306,7 @@ fun PetDialog(
         )
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownMenuField(
