@@ -119,7 +119,11 @@ fun FindEmScreen(
                                 else viewModel.selectedTab.value = i
                             },
                             icon = { Icon(tabItem.second, contentDescription = tabItem.first) },
-                            text = { Text(tabItem.first) }
+                            text = { Text(tabItem.first,
+                                fontSize = 8.sp,
+                                maxLines = 1,
+                                softWrap = false)
+                            }
                         )
                     }
                 }

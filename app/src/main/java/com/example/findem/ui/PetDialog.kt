@@ -99,7 +99,6 @@ fun PetDialog(
         if (petParaEditar != null) {
             val parts = petParaEditar.endereco.split(",")
             if (parts.size >= 3) {
-                // Tenta pré-carregar visualmente (a lógica real do IBGE depende do ID, aqui é visual)
             }
         }
     }
@@ -140,7 +139,7 @@ fun PetDialog(
 
                 DropdownMenuField("Categoria", categoria, categoriasOptions, { categoria = it }, isCategoriaExpanded, { isCategoriaExpanded = it })
 
-                OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do Animal") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do Animal", fontSize = 15.sp) }, modifier = Modifier.fillMaxWidth())
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.weight(1f)) {
@@ -151,7 +150,7 @@ fun PetDialog(
 
                 Divider(Modifier.padding(vertical = 4.dp))
 
-                // --- FORMULÁRIO DINÂMICO ---
+                // forms mudando pra adoção
                 if (categoria == "Adoção") {
                     Text("Perfil da Adoção", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
 
@@ -325,7 +324,9 @@ fun DropdownMenuField(
             value = selectedValue,
             onValueChange = {},
             readOnly = true,
-            label = { Text(label) },
+            label = { Text(label,
+                fontSize = 14.sp
+            )},
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
             modifier = Modifier.menuAnchor().fillMaxWidth()
         )
