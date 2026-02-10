@@ -27,7 +27,8 @@ fun FindEmDrawerContent(
     onCloseDrawer: () -> Unit,
     onLoginClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onMyPostsClick: () -> Unit // NOVO: Callback para navegação
+    onMyPostsClick: () -> Unit,
+    onFavoriteClick: () -> Unit
 ) {
     ModalDrawerSheet(
         modifier = Modifier.width(300.dp),
@@ -97,7 +98,11 @@ fun FindEmDrawerContent(
             Spacer(modifier = Modifier.height(24.dp))
 
             // --- ITENS DO MENU ---
-            DrawerMenuItem(Icons.Default.Star, "Favoritados") { onCloseDrawer() }
+            DrawerMenuItem(Icons.Default.Star, "Favoritados") {
+                onCloseDrawer()
+                onFavoriteClick()
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // CORREÇÃO: Chama os dois métodos - fecha o drawer e executa a ação de navegar
@@ -105,9 +110,6 @@ fun FindEmDrawerContent(
                 onCloseDrawer()
                 onMyPostsClick()
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            DrawerMenuItem(Icons.Default.Notifications, "Notificações") { onCloseDrawer() }
 
             Spacer(modifier = Modifier.weight(1f)) // Usa weight para empurrar o rodapé para baixo
 

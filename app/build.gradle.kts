@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.firebase.firestore)
     implementation(libs.androidx.foundation.layout)
+    implementation(libs.androidx.foundation)
 
     //implementation(libs.firebase.common.ktx)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

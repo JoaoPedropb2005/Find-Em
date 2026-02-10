@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -76,7 +78,17 @@ fun FindEmScreen(
                 onMyPostsClick = {
                     scope.launch { drawerState.close() }
                     navController.navigate("minhas_postagens")
+                },
+                // --- CORREÇÃO AQUI: ADICIONANDO O LISTENER DO CLIQUE ---
+                onFavoriteClick = {
+                    scope.launch { drawerState.close() }
+                    if (viewModel.currentUser != null) {
+                        navController.navigate("favorites") // Navega para a tela de favoritos
+                    } else {
+                        Toast.makeText(context, "Faça login para ver seus favoritos.", Toast.LENGTH_SHORT).show()
+                    }
                 }
+                // -------------------------------------------------------
             )
         }
     ) {
@@ -119,11 +131,7 @@ fun FindEmScreen(
                                 else viewModel.selectedTab.value = i
                             },
                             icon = { Icon(tabItem.second, contentDescription = tabItem.first) },
-                            text = { Text(tabItem.first,
-                                fontSize = 8.sp,
-                                maxLines = 1,
-                                softWrap = false)
-                            }
+                            text = { Text(tabItem.first, fontSize = 8.sp, maxLines = 1, softWrap = false) }
                         )
                     }
                 }
@@ -176,7 +184,21 @@ fun FindEmScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(items = petsFiltrados) { pet ->
-                            PetCard(pet = pet, onClick = { onPetClick(pet) })
+                            // --- TAMBÉM GARANTA QUE A LÓGICA DO CARD ESTÁ AQUI ---
+                            val isFavorite = viewModel.favoritosIds.contains(pet.id)
+
+                            PetCard(
+                                pet = pet,
+                                isFavorite = isFavorite,
+                                onFavoriteClick = {
+                                    if (viewModel.currentUser != null) {
+                                        viewModel.toggleFavorito(pet)
+                                    } else {
+                                        Toast.makeText(context, "Faça login para favoritar!", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                onClick = { onPetClick(pet) }
+                            )
                         }
                     }
                 }
@@ -207,41 +229,73 @@ fun FindEmScreen(
         )
     }
 }
+
 @Composable
-fun PetCard(pet: Pet, onClick: () -> Unit) {
-    Column(
+fun PetCard(
+    pet: Pet,
+    isFavorite: Boolean = false,
+    onFavoriteClick: (() -> Unit)? = null,
+    onClick: () -> Unit
+) {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(Color.White)
             .clickable { onClick() }
-            .padding(8.dp)
     ) {
-        if (pet.imageUrl.isNotBlank()) {
-            AsyncImage(
-                model = pet.imageUrl,
-                contentDescription = pet.nome,
-                modifier = Modifier
-                    .height(120.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop,
-                placeholder = painterResource(id = android.R.drawable.ic_menu_camera),
-                error = painterResource(id = android.R.drawable.ic_menu_report_image)
-            )
-        } else {
-            Image(
-                painter = painterResource(id = android.R.drawable.ic_menu_gallery),
-                contentDescription = pet.nome,
-                modifier = Modifier.height(120.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
+        // Conteúdo do Card
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            if (pet.imageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = pet.imageUrl,
+                    contentDescription = pet.nome,
+                    modifier = Modifier
+                        .height(120.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(id = android.R.drawable.ic_menu_camera),
+                    error = painterResource(id = android.R.drawable.ic_menu_report_image)
+                )
+            } else {
+                Image(
+                    painter = painterResource(id = android.R.drawable.ic_menu_gallery),
+                    contentDescription = pet.nome,
+                    modifier = Modifier.height(120.dp).fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Spacer(Modifier.height(6.dp))
+            Text(pet.nome, fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+            Text(pet.raca, fontSize = 12.sp, color = Color.DarkGray)
+            Text(pet.endereco, fontSize = 12.sp, color = Color.DarkGray, maxLines = 1)
         }
 
-        Spacer(Modifier.height(6.dp))
-        Text(pet.nome, fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Bold)
-        Text(pet.raca, fontSize = 12.sp, color = Color.DarkGray)
-        Text(pet.endereco, fontSize = 12.sp, color = Color.DarkGray, maxLines = 1)
+        // Botão de Favorito (Coração)
+        if (onFavoriteClick != null) {
+            IconButton(
+                onClick = onFavoriteClick,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                    .size(32.dp)
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Favoritar",
+                    tint = if (isFavorite) Color.Red else Color.Gray,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
     }
 }
 

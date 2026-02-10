@@ -14,6 +14,7 @@ import com.cloudinary.android.callback.UploadCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObjects
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,9 @@ class FindEmViewModel(application: Application) : AndroidViewModel(application) 
     private val db = FirebaseFirestore.getInstance()
     private val _pets = mutableStateListOf<Pet>()
     val pets: List<Pet> get() = _pets
+    val favoritosIds = mutableStateListOf<String>()
+
+    val petsFavoritos: List<Pet> get() = _pets.filter { favoritosIds.contains(it.id) }
 
     // --- ESTADO DE LOCALIZAÇÃO E FILTROS ---
     var userLocation by mutableStateOf<LatLng?>(null)
@@ -121,15 +125,21 @@ class FindEmViewModel(application: Application) : AndroidViewModel(application) 
             currentUser = user
             if (user != null) {
                 userName = user.displayName ?: user.email?.substringBefore("@") ?: "Usuário"
+
                 db.collection("usuarios").document(user.uid).addSnapshotListener { snapshot, _ ->
                     if (snapshot != null && snapshot.exists()) {
                         userWhatsapp = snapshot.getString("whatsapp") ?: ""
                         snapshot.getString("nome")?.let { if (it.isNotBlank()) userName = it }
+
+                        val favs = snapshot.get("favoritos") as? List<String> ?: emptyList()
+                        favoritosIds.clear()
+                        favoritosIds.addAll(favs)
                     }
                 }
             } else {
                 userName = "Visitante"
                 userWhatsapp = ""
+                favoritosIds.clear()
             }
         }
     }
@@ -206,6 +216,19 @@ class FindEmViewModel(application: Application) : AndroidViewModel(application) 
                 .addOnFailureListener {
                     Log.e("FindEm", "Erro ao atualizar: ${it.message}")
                 }
+        }
+    }
+
+    fun toggleFavorito(pet: Pet) {
+        val uid = currentUser?.uid ?: return
+        val userRef = db.collection("usuarios").document(uid)
+
+        if (favoritosIds.contains(pet.id)) {
+            userRef.update("favoritos", FieldValue.arrayRemove(pet.id))
+            favoritosIds.remove(pet.id)
+        } else {
+            userRef.update("favoritos", FieldValue.arrayUnion(pet.id))
+            favoritosIds.add(pet.id)
         }
     }
 

@@ -84,9 +84,13 @@ fun PetDialog(
     )
 
     val especiesOptions = listOf("Cachorro", "Gato", "Ave", "Outros")
-    val categoriasOptions = listOf("Perdidos", "Adoção", "Encontrados")
+    val categoriasOptions = listOf("Perdidos", "Adoção")
+
     var isEspecieExpanded by remember { mutableStateOf(false) }
     var isCategoriaExpanded by remember { mutableStateOf(false) }
+    var isPorteExpanded by remember { mutableStateOf(false) }
+    var isIdadeExpanded by remember { mutableStateOf(false) }
+
     var isEstadoExpanded by remember { mutableStateOf(false) }
     var isMunicipioExpanded by remember { mutableStateOf(false) }
 
@@ -166,10 +170,10 @@ fun PetDialog(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(Modifier.weight(1f)) {
-                            DropdownMenuField("Porte", porteAdocao, listOf("Pequeno", "Médio", "Grande"), { porteAdocao = it }, false, {})
+                            DropdownMenuField("Porte", porteAdocao, listOf("Pequeno", "Médio", "Grande"), { porteAdocao = it }, isPorteExpanded, { isPorteExpanded = it })
                         }
                         Box(Modifier.weight(1f)) {
-                            DropdownMenuField("Idade", idadeAdocao, listOf("Filhote", "Adulto", "Idoso"), { idadeAdocao = it }, false, {})
+                            DropdownMenuField("Idade", idadeAdocao, listOf("Filhote", "Adulto", "Idoso"), { idadeAdocao = it }, isIdadeExpanded, { isIdadeExpanded = it })
                         }
                     }
 

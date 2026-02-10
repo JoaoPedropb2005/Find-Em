@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Pets
@@ -39,7 +40,7 @@ import com.example.findem.model.Pet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CardInform(pet: Pet, viewModel: FindEmViewModel,onBack: () -> Unit) {
+fun CardInform(pet: Pet, viewModel: FindEmViewModel,onBack: () -> Unit, onFavoriteClick: () -> Unit) {
     val context = LocalContext.current
 
     val isAdocao = pet.categoria.equals("adoção", ignoreCase = true) ||
@@ -59,7 +60,16 @@ fun CardInform(pet: Pet, viewModel: FindEmViewModel,onBack: () -> Unit) {
                     containerColor = if (isAdocao) Color(0xFF673AB7) else Color(0xFF4CAF50), // Roxo para Adoção
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White
-                )
+                ),
+                actions = {
+                    IconButton(onClick = onFavoriteClick) {
+                        Icon(
+                            imageVector = Icons.Default.FavoriteBorder,
+                            contentDescription = "Favoritar",
+                            tint = Color.White
+                        )
+                    }
+                }
             )
         }
     ) { padding ->

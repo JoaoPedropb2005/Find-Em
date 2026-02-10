@@ -23,6 +23,7 @@ import com.example.findem.ui.MapScreen
 import com.example.findem.ui.theme.FindEmScreen
 import com.example.findem.ui.FindEmRoute
 import com.example.findem.ui.CardInform
+import com.example.findem.ui.FavoritesScreen
 import com.example.findem.ui.MyPostScreen
 import com.example.findem.ui.PetDetailsScreen
 
@@ -112,10 +113,20 @@ class MainActivity : ComponentActivity() {
                                 CardInform(
                                     pet = pet,
                                     viewModel = viewModel, // Passa o VM para checar login no botão
-                                    onBack = { navController.popBackStack() }
+                                    onBack = { navController.popBackStack() },
+                                    onFavoriteClick = { viewModel.toggleFavorito(pet) }
                                 )
                             }
                         }
+
+                        composable("favorites") {
+                            FavoritesScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() },
+                                onPetClick = { navController.navigate("card_inform") }
+                            )
+                        }
+
                     }
                 }
             }
