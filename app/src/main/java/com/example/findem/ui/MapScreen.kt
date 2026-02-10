@@ -29,11 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.findem.model.FindEmViewModel
 import com.example.findem.model.Notificacao
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -49,15 +45,16 @@ fun MapScreen(
     val context = LocalContext.current
     var isNotificacoesExpanded by remember { mutableStateOf(true) }
 
-    val recife = LatLng(-8.0476, -34.8770)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(recife, 12f)
+        position = CameraPosition.fromLatLngZoom(LatLng(-8.0476, -34.8770), 12f)
     }
 
     var uiSettings by remember {
-        mutableStateOf(MapUiSettings(myLocationButtonEnabled = false, zoomControlsEnabled = false))
+        mutableStateOf(MapUiSettings(myLocationButtonEnabled = true, zoomControlsEnabled = false))
     }
-    var properties by remember { mutableStateOf(MapProperties(isMyLocationEnabled = false)) }
+    var properties by remember {
+        mutableStateOf(MapProperties(isMyLocationEnabled = false))
+    }
 
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
@@ -65,7 +62,6 @@ fun MapScreen(
         object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 result.lastLocation?.let { location ->
-                    // AJUSTADO: Certifique-se que o nome no ViewModel é este
                     viewModel.updateUserLocation(location.latitude, location.longitude)
                 }
             }
@@ -77,7 +73,6 @@ fun MapScreen(
             val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
             if (hasFine) {
                 properties = properties.copy(isMyLocationEnabled = true)
-                uiSettings = uiSettings.copy(myLocationButtonEnabled = true)
 
                 val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
                     .setMinUpdateDistanceMeters(10f)
@@ -93,7 +88,7 @@ fun MapScreen(
                 }
             }
         } catch (e: SecurityException) {
-            Log.e("MapScreen", "Erro: ${e.message}")
+            Log.e("MapScreen", "Erro GPS: ${e.message}")
         }
     }
 
@@ -102,13 +97,24 @@ fun MapScreen(
         onDispose { fusedLocationClient.removeLocationUpdates(locationCallback) }
     }
 
+    // Filtro de Pins no mapa respeitando o raio de 2km
+    val pinsNoRaio = viewModel.petsFiltradosMap.filter { pet ->
+        val localUser = viewModel.userLocation ?: return@filter true
+        val distancia = FloatArray(1)
+        android.location.Location.distanceBetween(
+            localUser.latitude, localUser.longitude,
+            pet.latitude, pet.longitude, distancia
+        )
+        distancia[0] <= 2000
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Mapa de Buscas", color = Color.White, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, "Voltar", tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF4CAF50))
@@ -122,7 +128,7 @@ fun MapScreen(
                 properties = properties,
                 uiSettings = uiSettings
             ) {
-                viewModel.petsFiltradosMap.forEach { pet ->
+                pinsNoRaio.forEach { pet ->
                     if (pet.latitude != 0.0 && pet.longitude != 0.0) {
                         Marker(
                             state = MarkerState(position = LatLng(pet.latitude, pet.longitude)),
@@ -134,14 +140,18 @@ fun MapScreen(
             }
 
             Card(
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().shadow(10.dp, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .shadow(10.dp, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("FILTROS", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        // AJUSTADO: Usando os filtros globais do ViewModel
+                        // RESOLVIDO: Passando as variáveis de filtro do ViewModel
                         FilterCheckbox("Cachorros", viewModel.filtroCachorros)
                         FilterCheckbox("Gatos", viewModel.filtroGatos)
                         FilterCheckbox("Aves", viewModel.filtroAves)
@@ -150,8 +160,12 @@ fun MapScreen(
 
                     HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
 
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable { isNotificacoesExpanded = !isNotificacoesExpanded }, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                        Text("ALERTAS (Raio 1km)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clickable { isNotificacoesExpanded = !isNotificacoesExpanded },
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("ALERTAS (Raio 2km)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
                         Icon(if (isNotificacoesExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp, null, tint = Color.Gray)
                     }
 
@@ -159,21 +173,17 @@ fun MapScreen(
                         if (viewModel.notificacoesProximas.isNotEmpty()) {
                             LazyColumn(modifier = Modifier.heightIn(max = 200.dp), contentPadding = PaddingValues(top = 8.dp)) {
                                 items(viewModel.notificacoesProximas) { notif ->
-                                    NotificacaoItem(
-                                        notificacao = notif,
-                                        onClick = {
-                                            // Busca o pet pelo ID salvo na notificação
-                                            val pet = viewModel.getPetById(notif.petId)
-                                            if (pet != null) {
-                                                viewModel.petSelecionadoParaDetalhes = pet
-                                                onNavigateToDetails()
-                                            }
+                                    NotificacaoItem(notificacao = notif) {
+                                        val pet = viewModel.getPetById(notif.petId)
+                                        if (pet != null) {
+                                            viewModel.petSelecionadoParaDetalhes = pet
+                                            onNavigateToDetails()
                                         }
-                                    )
+                                    }
                                 }
                             }
                         } else {
-                            Text("Nenhum alerta em 1km.", modifier = Modifier.padding(16.dp).fillMaxWidth(), textAlign = TextAlign.Center, color = Color.Gray, fontSize = 12.sp)
+                            Text("Nenhum alerta em 2km.", modifier = Modifier.padding(16.dp).fillMaxWidth(), textAlign = TextAlign.Center, color = Color.Gray, fontSize = 12.sp)
                         }
                     }
                 }
@@ -182,10 +192,15 @@ fun MapScreen(
     }
 }
 
+// Certifique-se de que estas funções auxiliares estão fora da função MapScreen
 @Composable
 fun FilterCheckbox(label: String, state: MutableState<Boolean>) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Checkbox(checked = state.value, onCheckedChange = { state.value = it }, colors = CheckboxDefaults.colors(checkedColor = Color(0xFF4CAF50)))
+        Checkbox(
+            checked = state.value,
+            onCheckedChange = { state.value = it },
+            colors = CheckboxDefaults.colors(checkedColor = Color(0xFF4CAF50))
+        )
         Text(label, fontSize = 10.sp)
     }
 }

@@ -20,128 +20,280 @@ import androidx.compose.ui.unit.sp
 import com.example.findem.model.Pet
 
 @Composable
+
 fun FindEmDrawerContent(
+
     pets: List<Pet>,
+
     userName: String?,
+
     isUserLoggedIn: Boolean,
+
     onCloseDrawer: () -> Unit,
+
     onLoginClick: () -> Unit,
+
     onLogoutClick: () -> Unit,
+
     onMyPostsClick: () -> Unit,
-    onFavoriteClick: () -> Unit
+
+    onFavoriteClick: () -> Unit,
+
+    onSettingsClick: () -> Unit
+
 ) {
+
     ModalDrawerSheet(
+
         modifier = Modifier.width(300.dp),
+
         drawerContainerColor = Color(0xFF4CAF50)
+
     ) {
+
         Column(
+
             modifier = Modifier
+
                 .fillMaxSize()
+
                 .padding(16.dp)
+
         ) {
+
             Row(
+
                 modifier = Modifier
+
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+
+                    .padding(vertical = 16.dp)
+
+                    .clickable {
+
+                        onCloseDrawer()
+
+                        onSettingsClick()
+
+                    },
+
                 horizontalArrangement = Arrangement.SpaceBetween,
+
                 verticalAlignment = Alignment.CenterVertically
+
             ) {
+
                 Column(modifier = Modifier.weight(1f)) {
+
                     if (isUserLoggedIn) {
+
                         Text(
+
                             text = "Olá, $userName",
+
                             color = Color.White,
+
                             fontSize = 16.sp,
+
                             fontWeight = FontWeight.Bold
+
                         )
+
                         Spacer(modifier = Modifier.height(4.dp))
+
                         Text(
+
                             text = "Sair (Logout)",
+
                             color = Color(0xFFBBDEFB),
+
                             fontSize = 13.sp,
+
                             textDecoration = TextDecoration.Underline,
+
                             modifier = Modifier.clickable { onLogoutClick() }
+
                         )
+
                     } else {
+
                         Text(
+
                             text = "Usuário Não Logado",
+
                             color = Color.White,
+
                             fontSize = 16.sp,
+
                             fontWeight = FontWeight.Bold
+
                         )
+
                         Text(
+
                             text = "Logar / Criar conta",
+
                             color = Color(0xFFBBDEFB),
+
                             fontSize = 12.sp,
+
                             textDecoration = TextDecoration.Underline,
+
                             modifier = Modifier.clickable { onLoginClick() }
+
                         )
+
                     }
+
                 }
 
+
+
                 Box(
+
                     modifier = Modifier
+
                         .size(48.dp)
+
                         .clip(CircleShape)
+
                         .background(Color.Black),
+
                     contentAlignment = Alignment.Center
+
                 ) {
+
                     Icon(
+
                         imageVector = Icons.Default.Person,
+
                         contentDescription = "Perfil",
+
                         tint = Color.Gray,
+
                         modifier = Modifier.size(32.dp)
+
                     )
+
                 }
+
             }
+
+
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- ITENS DO MENU ---
+
+
             DrawerMenuItem(Icons.Default.Star, "Favoritados") {
+
                 onCloseDrawer()
+
                 onFavoriteClick()
+
             }
+
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // CORREÇÃO: Chama os dois métodos - fecha o drawer e executa a ação de navegar
+
+
             DrawerMenuItem(Icons.Default.List, "Minhas postagens") {
+
                 onCloseDrawer()
+
                 onMyPostsClick()
+
             }
 
-            Spacer(modifier = Modifier.weight(1f)) // Usa weight para empurrar o rodapé para baixo
+
+
+            Spacer(modifier = Modifier.weight(1f))
+
+
 
             Text(
+
                 "Created by Julia Soares And João Pedro\n2025",
+
                 color = Color.White,
+
                 fontSize = 13.sp,
+
                 modifier = Modifier.padding(bottom = 16.dp)
+
             )
 
+
+
+// BOTÃO CONFIGURAÇÕES
+
             Row(
-                modifier = Modifier.clickable { onCloseDrawer() },
+
+                modifier = Modifier
+
+                    .fillMaxWidth()
+
+                    .clickable {
+
+                        onCloseDrawer()
+
+                        onSettingsClick()
+
+                    }
+
+                    .padding(vertical = 8.dp),
+
                 verticalAlignment = Alignment.CenterVertically
+
             ) {
+
                 Icon(Icons.Default.Settings, null, tint = Color.White)
+
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("Configurações", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
+                Text(
+
+                    "Configurações",
+
+                    color = Color.White,
+
+                    fontSize = 16.sp,
+
+                    fontWeight = FontWeight.Bold
+
+                )
             }
         }
     }
 }
 
 @Composable
+
 fun DrawerMenuItem(icon: ImageVector, title: String, onClick: () -> Unit) {
+
     Row(
+
         modifier = Modifier
+
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+
+            .clickable(onClick = onClick)
+
+            .padding(vertical = 8.dp),
+
         verticalAlignment = Alignment.CenterVertically
+
     ) {
+
         Icon(icon, title, tint = Color.White, modifier = Modifier.size(24.dp))
+
         Spacer(modifier = Modifier.width(16.dp))
+
         Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
     }
+
 }
+

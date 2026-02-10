@@ -5,4 +5,6 @@ object FindEmRoute {
     const val EXPLICATION = "explicacao"
     const val HOME = "home"
     const val MAP = "mapa"
+
+    const val SETTINGS = "configuracoes"
 }

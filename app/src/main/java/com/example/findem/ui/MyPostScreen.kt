@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.findem.model.FindEmViewModel
-import com.example.findem.model.Pet
 import com.example.findem.ui.theme.PetCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,8 +24,8 @@ import com.example.findem.ui.theme.PetCard
 fun MyPostScreen(viewModel: FindEmViewModel, onBack: () -> Unit, onPetClick: () -> Unit) {
     val currentUserId = viewModel.currentUser?.uid
 
-    var petParaEditarSelecionado by remember { mutableStateOf<Pet?>(null) }
-    var mostrarDialogo by remember { mutableStateOf(false) }
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val compactMode = configuration.screenWidthDp.dp < 360.dp
 
     val minhasPostagens = if (currentUserId != null) {
         viewModel.pets.filter { it.userId == currentUserId }
@@ -37,17 +36,13 @@ fun MyPostScreen(viewModel: FindEmViewModel, onBack: () -> Unit, onPetClick: () 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Minhas Postagens") },
+                title = { Text("Minhas Postagens", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF4CAF50),
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF4CAF50))
             )
         }
     ) { padding ->
@@ -65,10 +60,14 @@ fun MyPostScreen(viewModel: FindEmViewModel, onBack: () -> Unit, onPetClick: () 
             ) {
                 items(minhasPostagens) { pet ->
                     Box {
-                        PetCard(pet = pet, onClick = {
-                            viewModel.petSelecionadoParaDetalhes = pet
-                            onPetClick()
-                        })
+                        PetCard(
+                            pet = pet,
+                            compact = compactMode,
+                            onClick = {
+                                viewModel.petSelecionadoParaDetalhes = pet
+                                onPetClick()
+                            }
+                        )
 
                         IconButton(
                             onClick = { viewModel.deletarPet(pet) },
@@ -77,29 +76,11 @@ fun MyPostScreen(viewModel: FindEmViewModel, onBack: () -> Unit, onPetClick: () 
                                 .padding(4.dp)
                                 .background(Color.White.copy(alpha = 0.7f), shape = CircleShape)
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Apagar", tint = Color.Red)
+                            Icon(Icons.Default.Delete, "Apagar", tint = Color.Red)
                         }
                     }
                 }
             }
         }
-    }
-
-    if (mostrarDialogo && petParaEditarSelecionado != null) {
-        PetDialog(
-            // AJUSTADO: O nome do parâmetro deve ser igual ao definido no PetDialog.kt
-            petParaEditar = petParaEditarSelecionado,
-            onDismiss = {
-                mostrarDialogo = false
-                petParaEditarSelecionado = null
-            },
-            onConfirm = { petAtualizado ->
-                val uri = if (petAtualizado.imageUrl.startsWith("http")) null else Uri.parse(petAtualizado.imageUrl)
-                viewModel.salvarPetComFoto(uri, petAtualizado)
-                mostrarDialogo = false
-                petParaEditarSelecionado = null
-            },
-            viewModel = viewModel
-        )
     }
 }
