@@ -14,6 +14,18 @@ By combining geolocation, cloud services, and community engagement, the app incr
 
 ---
 
+## Design Decisions
+
+The visual identity of the application was designed with accessibility in mind.
+
+- A soft green color palette was chosen to reduce visual fatigue and improve usability
+- Colors were tested with users with different types of color blindness to ensure readability and comfort
+- The app logo features a friendly golden retriever in a natural environment, reinforcing the emotional connection and trust associated with pet care and recovery
+
+These decisions aim to create an inclusive and welcoming experience for all users.
+
+---
+
 ## Features
 
 - Register lost pets with geolocation
